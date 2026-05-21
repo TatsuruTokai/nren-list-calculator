@@ -1,0 +1,2351 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>N連リスト電卓</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f8ff;
+      --surface: #ffffff;
+      --surface-2: #eef4ff;
+      --ink: #142033;
+      --muted: #61708a;
+      --line: #d7e2f3;
+      --accent: #2563eb;
+      --accent-dark: #1e40af;
+      --accent-soft: #eaf1ff;
+      --accent-line: #b8cdf8;
+      --accent-ink: #ffffff;
+      --green: #0f766e;
+      --warn: #dc2626;
+      --negative: #dc2626;
+      --row-hover: #f8fbff;
+      --field-bg: #fbfdff;
+      --shadow: 0 18px 50px rgba(37, 99, 235, 0.13);
+      --radius: 8px;
+      --key-size: clamp(54px, 6.2svh, 64px);
+      --lane-min: 300px;
+      --sidebar-width: clamp(360px, 40vw, 430px);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      height: 100svh;
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 76px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(245, 248, 255, 0.92);
+      backdrop-filter: blur(18px);
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--accent);
+      color: var(--surface);
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.12rem;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .status-line {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .count-pill {
+      min-width: 56px;
+      min-height: 46px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--surface);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .icon-btn,
+    .text-btn {
+      min-height: 46px;
+      min-width: 46px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 800;
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+    }
+
+    .text-btn {
+      min-width: auto;
+      padding: 0 16px;
+      font-size: 0.94rem;
+      font-weight: 750;
+    }
+
+    .icon-btn:hover,
+    .text-btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent-line);
+      background: #fbfdff;
+    }
+
+    .icon-btn.primary,
+    .text-btn.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+
+    .workspace {
+      grid-column: 1;
+      grid-row: 2;
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 18px 22px 22px;
+      scroll-behavior: smooth;
+    }
+
+    .lanes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(var(--lane-min), 1fr));
+      align-items: start;
+      gap: 14px;
+      max-width: 1680px;
+      margin: 0 auto;
+    }
+
+	    .lane {
+	      min-width: 0;
+	      height: min(640px, calc(100svh - 116px));
+	      min-height: 460px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+	      overflow: hidden;
+	      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+	    }
+
+	    .lane.is-dragging {
+	      opacity: 0.55;
+	      transform: scale(0.99);
+	    }
+
+	    .lane.is-drop-target {
+	      border-color: var(--accent);
+	      box-shadow: 0 0 0 3px var(--accent-line), var(--shadow);
+	    }
+
+	    .lane.is-active {
+	      border-color: rgba(37, 99, 235, 0.72);
+	      box-shadow: var(--shadow);
+	      transform: translateY(-1px);
+	    }
+
+	    .lane-head {
+	      display: grid;
+	      grid-template-columns: auto minmax(0, 1fr) auto;
+	      align-items: center;
+	      gap: 10px;
+	      padding: 14px 14px 10px;
+	      border-bottom: 1px solid var(--line);
+	      background: #fbfdff;
+	      cursor: grab;
+	    }
+
+	    .drag-handle {
+	      width: 26px;
+	      height: 34px;
+	      display: grid;
+	      place-items: center;
+	      border-radius: 7px;
+	      color: var(--muted);
+	      font-size: 1rem;
+	      font-weight: 850;
+	      line-height: 1;
+	      touch-action: none;
+	    }
+
+	    .drag-handle:hover {
+	      background: var(--surface-2);
+	      color: var(--ink);
+	    }
+
+	    .lane-title {
+	      width: 100%;
+	      border: 0;
+      outline: 0;
+      padding: 4px 0;
+      background: transparent;
+	      color: var(--ink);
+	      font-weight: 800;
+	      font-size: 1.08rem;
+	      cursor: text;
+	    }
+
+    .lane-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mini-btn {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 850;
+      transition: background 140ms ease, color 140ms ease;
+    }
+
+    .mini-btn:hover {
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+
+    .lane-total {
+      display: grid;
+      gap: 4px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .lane-total-label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .lane-total-value {
+      min-width: 0;
+      color: var(--accent);
+      font-size: 2rem;
+      line-height: 1.05;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tape {
+      min-height: 0;
+      overflow: auto;
+      padding: 8px 0;
+    }
+
+    .empty {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      color: #8b948c;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .tape-row {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) 42px;
+      align-items: center;
+      min-height: 56px;
+      gap: 10px;
+      padding: 10px 12px 10px 14px;
+      border-bottom: 1px solid #edf2fb;
+      transition: background 120ms ease;
+    }
+
+	    .tape-row.number {
+	      align-items: start;
+	      cursor: pointer;
+	    }
+
+	    .tape-row.number.is-editing {
+	      background: var(--accent-soft);
+	    }
+
+    .tape-row:hover {
+      background: #f8fbff;
+    }
+
+    .row-op {
+      width: 54px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--ink);
+      text-align: center;
+      font-weight: 850;
+      font-size: 1.04rem;
+      outline: 0;
+    }
+
+    .row-value,
+    .row-qty,
+    .row-memo,
+    .note-value {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+	    .row-value {
+	      text-align: right;
+	      font-size: 1.18rem;
+	      font-weight: 700;
+	      cursor: text;
+	    }
+
+    .row-entry {
+      min-width: 0;
+      display: grid;
+      gap: 7px;
+    }
+
+	    .row-main {
+	      display: grid;
+	      grid-template-columns: minmax(96px, 1fr);
+	      align-items: center;
+	      gap: 8px;
+	    }
+
+		    .row-detail {
+		      display: none;
+		      grid-template-columns: 1fr;
+		      gap: 8px;
+		    }
+
+	    .row-detail.is-open {
+	      display: grid;
+	    }
+
+	    .row-extra-summary {
+	      min-width: 0;
+	      color: var(--muted);
+	      font-size: 0.82rem;
+	      font-weight: 650;
+	      display: grid;
+	      justify-items: end;
+	      gap: 2px;
+	      line-height: 1.25;
+	      text-align: right;
+	      overflow: hidden;
+	    }
+
+	    .row-extra-summary span {
+	      max-width: 100%;
+	      overflow: hidden;
+	      text-overflow: ellipsis;
+	      white-space: nowrap;
+	    }
+
+		    .qty-box {
+		      display: inline-flex;
+		      align-items: center;
+		      justify-content: space-between;
+	      gap: 10px;
+	      width: 100%;
+	      min-width: 0;
+	      height: 42px;
+	      padding: 0 10px;
+	      border: 1px solid var(--line);
+	      border-radius: 7px;
+	      background: var(--surface-2);
+	      color: var(--muted);
+	      font-size: 0.9rem;
+		      font-weight: 800;
+		      cursor: text;
+		    }
+
+	    .memo-box {
+	      display: grid;
+	      gap: 5px;
+	      padding: 9px 10px;
+	      border: 1px solid var(--line);
+	      border-radius: 7px;
+	      background: var(--surface-2);
+		      color: var(--muted);
+		      font-size: 0.84rem;
+		      font-weight: 800;
+		      cursor: text;
+		    }
+
+		    .row-qty {
+		      width: min(120px, 48vw);
+		      height: 100%;
+		      padding: 0 2px;
+	      text-align: right;
+	      color: var(--ink);
+	      font-weight: 850;
+	    }
+
+    .row-memo {
+      color: #44546d;
+      font-size: 1rem;
+      font-variant-numeric: normal;
+    }
+
+	    .row-subtotal {
+	      color: var(--muted);
+	      font-size: 0.92rem;
+	      font-weight: 500;
+	      text-align: right;
+	      font-variant-numeric: tabular-nums;
+	      overflow: hidden;
+	      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .note-value {
+      color: #44546d;
+      font-size: 0.95rem;
+    }
+
+    .tape-row.note {
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      background: #f5f9ff;
+    }
+
+    .note-badge,
+    .memory-badge {
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      font-size: 0.72rem;
+      font-weight: 850;
+    }
+
+    .note-badge {
+      color: var(--green);
+      background: rgba(15, 118, 110, 0.11);
+    }
+
+    .memory-badge {
+      color: var(--accent);
+      background: rgba(37, 99, 235, 0.11);
+    }
+
+    .memory-value {
+      text-align: right;
+      color: var(--accent);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-delete {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: transparent;
+      color: #9aa39b;
+      font-weight: 850;
+    }
+
+    .row-delete:hover {
+      background: #fee2e2;
+      color: var(--warn);
+    }
+
+    .lane-foot {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      border-top: 1px solid var(--line);
+      background: var(--line);
+    }
+
+    .meter {
+      min-width: 0;
+      padding: 10px 12px;
+      background: #fbfdff;
+    }
+
+    .meter-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .meter-value {
+      display: block;
+      margin-top: 3px;
+      font-size: 1.05rem;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+	    .meter.memory .meter-value {
+	      color: var(--accent);
+	    }
+
+	    .is-negative {
+	      color: var(--negative) !important;
+	    }
+
+    .dock {
+      grid-column: 2;
+      grid-row: 2;
+      min-height: 0;
+      overflow: auto;
+      border-left: 1px solid var(--line);
+      background: rgba(245, 248, 255, 0.95);
+      backdrop-filter: blur(18px);
+      padding: 18px;
+      z-index: 4;
+    }
+
+    .dock-inner {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 14px;
+    }
+
+    .active-readout {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 8px;
+      background: var(--ink);
+      color: var(--surface);
+    }
+
+    .active-title {
+      min-width: 0;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .side-display {
+      min-width: 0;
+      text-align: right;
+      color: var(--surface);
+      font-size: clamp(2.4rem, 5.6svh, 3.4rem);
+      line-height: 1.05;
+      font-weight: 760;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .active-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .active-meta span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-content: start;
+      gap: 7px;
+    }
+
+    .key {
+      height: var(--key-size);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      font-size: 1.18rem;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      transition: transform 90ms ease, background 90ms ease, border-color 90ms ease;
+    }
+
+    .key:hover {
+      transform: translateY(-1px);
+      background: #fbfdff;
+      border-color: var(--accent-line);
+    }
+
+    .key:active {
+      transform: translateY(1px);
+    }
+
+    .key.operator {
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-color: var(--accent-line);
+    }
+
+	    .key.commit {
+	      background: var(--accent);
+	      border-color: var(--accent);
+	      color: var(--accent-ink);
+	      font-size: 1.18rem;
+	    }
+
+	    .key.note-key {
+	      grid-column: span 2;
+	    }
+
+    .key.utility {
+      color: #44546d;
+      background: var(--surface-2);
+    }
+
+    .key.memory {
+      color: var(--green);
+      background: #eefaf8;
+      border-color: #b9e3dd;
+    }
+
+    .key.zero {
+      grid-column: span 1;
+    }
+
+    dialog {
+      width: min(720px, calc(100vw - 28px));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    dialog::backdrop {
+      background: rgba(20, 32, 51, 0.34);
+    }
+
+    .dialog-head,
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-actions {
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+    }
+
+    .dialog-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 850;
+    }
+
+    .export-text {
+      width: 100%;
+      min-height: 360px;
+      display: block;
+      resize: vertical;
+      border: 0;
+      padding: 14px;
+      outline: 0;
+      color: var(--ink);
+      background: #fbfdff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 176px;
+      transform: translateX(-50%) translateY(14px);
+      padding: 10px 13px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: var(--surface);
+      font-size: 0.88rem;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+      z-index: 20;
+    }
+
+	    .toast.show {
+	      opacity: 1;
+	      transform: translateX(-50%) translateY(0);
+	    }
+
+	    @media (prefers-color-scheme: dark) {
+	      :root {
+	        color-scheme: dark;
+	        --bg: #08111f;
+	        --surface: #111827;
+	        --surface-2: #182338;
+	        --ink: #e7eefc;
+	        --muted: #96a4ba;
+	        --line: #27364f;
+	        --accent: #60a5fa;
+	        --accent-dark: #3b82f6;
+	        --accent-soft: #132949;
+	        --accent-line: #315a9e;
+	        --accent-ink: #06111f;
+	        --green: #5eead4;
+	        --warn: #fb7185;
+	        --negative: #fb7185;
+	        --row-hover: #162338;
+	        --field-bg: #0d1728;
+	        --shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+	      }
+
+	      .topbar,
+	      .dock {
+	        background: rgba(8, 17, 31, 0.92);
+	      }
+
+	      .lane-head,
+	      .lane-total,
+	      .meter,
+	      .export-text {
+	        background: var(--field-bg);
+	      }
+
+	      .icon-btn:hover,
+	      .text-btn:hover,
+	      .key:hover,
+	      .tape-row:hover {
+	        background: var(--row-hover);
+	      }
+
+		      .active-readout {
+		        background: #050b16;
+		        color: #f8fafc;
+		      }
+
+		      .side-display {
+		        color: #ffffff;
+		      }
+
+		      .key {
+		        color: #f8fafc;
+		      }
+
+		      .tape-row {
+		        border-bottom-color: var(--line);
+		      }
+
+	      .empty,
+	      .row-delete {
+	        color: var(--muted);
+	      }
+
+		      .row-memo,
+		      .note-value,
+		      .key.utility {
+		        color: #e5edff;
+		      }
+
+	      .tape-row.note {
+	        background: #101c2f;
+	      }
+
+	      .key.memory {
+	        color: var(--green);
+	        background: rgba(20, 184, 166, 0.12);
+	        border-color: rgba(94, 234, 212, 0.32);
+	      }
+
+	      .row-delete:hover {
+	        background: rgba(251, 113, 133, 0.16);
+	      }
+
+	      dialog::backdrop {
+	        background: rgba(0, 0, 0, 0.56);
+	      }
+	    }
+
+	    @media (pointer: coarse) and (min-width: 561px) {
+      .topbar {
+        min-height: 86px;
+        padding: 16px 24px;
+      }
+
+      .count-pill,
+      .icon-btn,
+      .text-btn {
+        min-height: 52px;
+      }
+
+      .dock {
+        padding: 20px;
+      }
+
+      .keypad {
+        gap: 9px;
+      }
+
+      .row-value,
+      .row-qty,
+      .row-memo,
+      .note-value,
+	      .lane-title {
+	        min-height: 44px;
+	      }
+	    }
+
+    @media (max-width: 560px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: auto;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .toolbar {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .workspace {
+        grid-column: 1;
+        grid-row: 2;
+        overflow: visible;
+        padding: 14px 12px;
+      }
+
+      .lanes {
+        grid-template-columns: 1fr;
+      }
+
+      .lane {
+        height: 560px;
+      }
+
+      .dock {
+        grid-column: 1;
+        grid-row: 3;
+        position: sticky;
+        bottom: 0;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        padding: 10px 12px 12px;
+      }
+
+      .dock-inner {
+        height: auto;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        gap: 10px;
+      }
+
+      .active-readout {
+        gap: 5px;
+      }
+
+      .keypad {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+	      .key {
+	        height: 48px;
+	      }
+
+	      .toast {
+	        bottom: 148px;
+	      }
+    }
+
+    @media (max-width: 420px) {
+      :root {
+        --lane-min: 260px;
+      }
+
+      .topbar {
+        padding: 12px;
+      }
+
+      .mark {
+        width: 38px;
+        height: 38px;
+      }
+
+      .toolbar {
+        gap: 6px;
+      }
+
+      .text-btn {
+        padding: 0 10px;
+      }
+
+      .lane {
+        height: 520px;
+      }
+
+      .keypad {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .key {
+        min-width: 0;
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">Σ</div>
+        <div>
+          <h1>N連リスト電卓</h1>
+          <p class="status-line" id="statusLine">自動保存中</p>
+        </div>
+      </div>
+      <nav class="toolbar" aria-label="全体操作">
+        <output class="count-pill" id="laneCount">3連</output>
+        <button class="icon-btn primary" type="button" data-control="add-lane" title="電卓を追加" aria-label="電卓を追加">+</button>
+        <button class="icon-btn" type="button" data-control="remove-active" title="選択中の電卓を削除" aria-label="選択中の電卓を削除">−</button>
+        <button class="text-btn" type="button" data-control="export" title="テキストを書き出す">書き出し</button>
+        <button class="text-btn" type="button" data-control="reset-all" title="すべて初期化">初期化</button>
+      </nav>
+    </header>
+
+    <section class="workspace" aria-label="電卓一覧">
+      <div class="lanes" id="lanes"></div>
+    </section>
+
+    <section class="dock" aria-label="右サイドバー電卓">
+      <div class="dock-inner">
+        <div class="active-readout" aria-live="polite">
+          <div class="active-title" id="activeTitle">電卓 1</div>
+          <output class="side-display" id="sideDisplay">0</output>
+          <div class="active-meta">
+            <span id="activeInput">入力 + 0</span>
+            <span id="activeTotal">合計 0</span>
+            <span id="activeMemory">M 0</span>
+          </div>
+        </div>
+        <div class="keypad" id="keypad">
+          <button class="key utility" type="button" data-key="AC">AC</button>
+          <button class="key utility" type="button" data-key="C">C</button>
+          <button class="key utility" type="button" data-key="back">⌫</button>
+          <button class="key operator" type="button" data-key="÷">÷</button>
+
+          <button class="key" type="button" data-key="7">7</button>
+          <button class="key" type="button" data-key="8">8</button>
+          <button class="key" type="button" data-key="9">9</button>
+          <button class="key operator" type="button" data-key="×">×</button>
+
+          <button class="key" type="button" data-key="4">4</button>
+          <button class="key" type="button" data-key="5">5</button>
+          <button class="key" type="button" data-key="6">6</button>
+          <button class="key operator" type="button" data-key="-">−</button>
+
+          <button class="key" type="button" data-key="1">1</button>
+          <button class="key" type="button" data-key="2">2</button>
+          <button class="key" type="button" data-key="3">3</button>
+          <button class="key operator" type="button" data-key="+">+</button>
+
+	          <button class="key utility" type="button" data-key="00">00</button>
+	          <button class="key zero" type="button" data-key="0">0</button>
+	          <button class="key" type="button" data-key=".">.</button>
+	          <button class="key commit" type="button" data-key="commit">入力</button>
+
+	          <button class="key utility" type="button" data-key="+/-">±</button>
+	          <button class="key utility" type="button" data-key="%">%</button>
+	          <button class="key utility note-key" type="button" data-key="note">メモ</button>
+
+          <button class="key memory" type="button" data-key="MC">MC</button>
+          <button class="key memory" type="button" data-key="MR">MR</button>
+          <button class="key memory" type="button" data-key="M+">M+</button>
+          <button class="key memory" type="button" data-key="M-">M−</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="exportDialog">
+    <div class="dialog-head">
+      <h2 class="dialog-title">書き出し</h2>
+      <button class="icon-btn" type="button" data-dialog="close" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <textarea class="export-text" id="exportText" spellcheck="false"></textarea>
+    <div class="dialog-actions">
+      <button class="text-btn" type="button" data-dialog="download">TXT保存</button>
+      <button class="text-btn primary" type="button" data-dialog="copy">コピー</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "nren-list-calculator-state-v1";
+    const operators = ["+", "-", "×", "÷"];
+    const lanesEl = document.getElementById("lanes");
+    const keypadEl = document.getElementById("keypad");
+    const laneCountEl = document.getElementById("laneCount");
+    const statusLineEl = document.getElementById("statusLine");
+    const activeTitleEl = document.getElementById("activeTitle");
+    const activeInputEl = document.getElementById("activeInput");
+    const activeTotalEl = document.getElementById("activeTotal");
+    const activeMemoryEl = document.getElementById("activeMemory");
+    const exportDialog = document.getElementById("exportDialog");
+    const exportTextEl = document.getElementById("exportText");
+    const toastEl = document.getElementById("toast");
+    const sideDisplayEl = document.getElementById("sideDisplay");
+
+    let toastTimer = null;
+    let longPressTimer = null;
+    let draggedLaneId = null;
+    let state = restoreState() || createDefaultState();
+    ensureActiveLane();
+    recomputeAllMemory();
+    render();
+
+    document.querySelector(".toolbar").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-control]");
+      if (!button) return;
+      handleControl(button.dataset.control);
+    });
+
+				    lanesEl.addEventListener("click", (event) => {
+				      const laneEl = event.target.closest(".lane");
+				      if (laneEl) setActiveLane(laneEl.dataset.laneId);
+
+				      const titleInput = event.target.closest(".lane-title");
+				      if (titleInput) {
+				        requestAnimationFrame(() => titleInput.select?.());
+				      }
+
+					      const detailBox = event.target.closest(".qty-box, .memo-box");
+					      if (detailBox && !event.target.matches("input")) {
+					        focusDetailBox(detailBox);
+					      }
+
+				      const rowEl = event.target.closest(".tape-row.number");
+				      if (rowEl && !isRowControlTarget(event.target)) {
+			        selectNumberRow(rowEl.closest(".lane")?.dataset.laneId, rowEl.dataset.rowId);
+			        if (event.target.closest(".row-value")) {
+			          requestAnimationFrame(() => event.target.closest(".row-value")?.select?.());
+			        }
+			      }
+
+		      const button = event.target.closest("[data-action]");
+		      if (!button) return;
+		      event.stopPropagation();
+	      handleLaneAction(button.dataset.action, button);
+	    });
+
+	    lanesEl.addEventListener("input", (event) => {
+	      const target = event.target;
+	      const lane = getLane(target.closest(".lane")?.dataset.laneId);
+      if (!lane) return;
+
+      if (target.matches(".lane-title")) {
+        lane.title = target.value.trim() || "無題";
+        refreshSummary();
+        saveState();
+        return;
+      }
+
+      const row = getRow(lane, target.dataset.rowId);
+      if (!row) return;
+
+	      if (target.matches(".row-value")) {
+	        row.value = target.value;
+	        lane.editingRowId = row.id;
+	        lane.current = target.value || "0";
+	        lane.pendingOp = row.op;
+	        lane.isTyping = true;
+	        lane.justEvaluated = false;
+	        refreshRowSubtotal(lane, row);
+	        refreshLaneMeters(lane);
+	        saveState();
+      }
+
+      if (target.matches(".row-qty")) {
+        row.qty = normalizeQuantityInput(target.value);
+        target.value = row.qty;
+        refreshRowSubtotal(lane, row);
+        refreshLaneMeters(lane);
+        saveState();
+      }
+
+	      if (target.matches(".row-memo")) {
+	        row.memo = target.value;
+	        saveState();
+	      }
+
+      if (target.matches(".note-value")) {
+        row.note = target.value;
+        saveState();
+      }
+    });
+
+    lanesEl.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!target.matches(".row-op")) return;
+      const lane = getLane(target.closest(".lane")?.dataset.laneId);
+      const row = lane ? getRow(lane, target.dataset.rowId) : null;
+	      if (!row) return;
+		      row.op = target.value;
+		      if (lane.editingRowId === row.id) {
+		        lane.pendingOp = row.op;
+		      }
+		      refreshRowSubtotal(lane, row);
+		      refreshLaneMeters(lane);
+		      saveState();
+		    });
+
+	    lanesEl.addEventListener("keydown", (event) => {
+	      if (event.key !== "Enter") return;
+	      if (event.target.matches(".row-value, .row-qty, .row-memo, .note-value, .lane-title")) {
+	        event.preventDefault();
+	        event.target.blur();
+	      }
+	    });
+
+	    lanesEl.addEventListener("focusin", (event) => {
+	      const target = event.target;
+	      if (!target.matches(".lane-title, .row-value")) return;
+	      if (target.matches(".row-value")) {
+	        selectNumberRow(target.closest(".lane")?.dataset.laneId, target.dataset.rowId);
+	      }
+	      requestAnimationFrame(() => target.select?.());
+	    });
+
+	    lanesEl.addEventListener("focusout", (event) => {
+	      const target = event.target;
+	      if (!target.matches(".row-qty, .row-memo")) return;
+	      const rowEl = target.closest(".tape-row.number");
+	      const lane = getLane(target.closest(".lane")?.dataset.laneId);
+	      const row = lane ? getRow(lane, target.dataset.rowId) : null;
+	      if (!rowEl || !row || rowEl.contains(event.relatedTarget)) return;
+	      setTimeout(() => {
+	        row.detailOpen = false;
+	        render();
+	      }, 0);
+	    });
+
+			    lanesEl.addEventListener("pointerdown", (event) => {
+			      if (event.button && event.button !== 0) return;
+			      const detailBox = event.target.closest(".qty-box, .memo-box");
+			      if (detailBox) {
+			        focusDetailBox(detailBox);
+			        if (!event.target.matches("input")) {
+			          event.preventDefault();
+			        }
+			        return;
+			      }
+			      const rowEl = event.target.closest(".tape-row.number");
+			      if (!rowEl || isRowControlTarget(event.target)) return;
+		      const laneId = rowEl.closest(".lane")?.dataset.laneId;
+		      const rowId = rowEl.dataset.rowId;
+		      clearLongPress();
+		      longPressTimer = window.setTimeout(() => {
+		        openRowDetail(laneId, rowId);
+		      }, 560);
+		    });
+
+	    for (const eventName of ["pointerup", "pointercancel", "pointerleave"]) {
+	      lanesEl.addEventListener(eventName, clearLongPress);
+	    }
+
+		    lanesEl.addEventListener("contextmenu", (event) => {
+		      const rowEl = event.target.closest(".tape-row.number");
+		      if (!rowEl || isRowControlTarget(event.target)) return;
+		      event.preventDefault();
+		      openRowDetail(rowEl.closest(".lane")?.dataset.laneId, rowEl.dataset.rowId);
+		    });
+
+	    lanesEl.addEventListener("dragstart", (event) => {
+	      const laneEl = event.target.closest(".lane");
+	      if (!laneEl || event.target.closest("input, select, button, textarea")) {
+	        event.preventDefault();
+	        return;
+	      }
+	      draggedLaneId = laneEl.dataset.laneId;
+	      event.dataTransfer.effectAllowed = "move";
+	      event.dataTransfer.setData("text/plain", draggedLaneId);
+	      laneEl.classList.add("is-dragging");
+	    });
+
+	    lanesEl.addEventListener("dragover", (event) => {
+	      const laneEl = event.target.closest(".lane");
+	      if (!laneEl || !draggedLaneId || laneEl.dataset.laneId === draggedLaneId) return;
+	      event.preventDefault();
+	      event.dataTransfer.dropEffect = "move";
+	      markDropTarget(laneEl);
+	    });
+
+	    lanesEl.addEventListener("dragleave", (event) => {
+	      const laneEl = event.target.closest(".lane");
+	      if (!laneEl || laneEl.contains(event.relatedTarget)) return;
+	      laneEl.classList.remove("is-drop-target");
+	    });
+
+	    lanesEl.addEventListener("drop", (event) => {
+	      const laneEl = event.target.closest(".lane");
+	      if (!laneEl || !draggedLaneId) return;
+	      event.preventDefault();
+	      reorderLane(draggedLaneId, laneEl.dataset.laneId);
+	      clearDragState();
+	    });
+
+	    lanesEl.addEventListener("dragend", clearDragState);
+
+	    keypadEl.addEventListener("click", (event) => {
+	      const button = event.target.closest("[data-key]");
+	      if (!button) return;
+      handleKey(button.dataset.key);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.target.closest("input, textarea, select, dialog")) return;
+
+      const key = mapKeyboardKey(event);
+      if (!key) return;
+      event.preventDefault();
+      handleKey(key);
+    });
+
+    exportDialog.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-dialog]");
+      if (!button) return;
+
+      if (button.dataset.dialog === "close") {
+        exportDialog.close();
+      }
+
+      if (button.dataset.dialog === "copy") {
+        await copyExportText();
+      }
+
+      if (button.dataset.dialog === "download") {
+        downloadExportText();
+      }
+    });
+
+    function createDefaultState() {
+      const lanes = [createLane("電卓 1"), createLane("電卓 2"), createLane("電卓 3")];
+      return {
+        activeId: lanes[0].id,
+        lanes
+      };
+    }
+
+    function createLane(title) {
+      return {
+        id: uid(),
+        title,
+        rows: [],
+	        current: "0",
+	        pendingOp: "+",
+	        isTyping: false,
+	        justEvaluated: false,
+	        editingRowId: "",
+	        memory: 0
+	      };
+    }
+
+    function uid() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
+      }
+      return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function restoreState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed.lanes) || parsed.lanes.length === 0) return null;
+        parsed.lanes = parsed.lanes.map(sanitizeLane);
+        return {
+          activeId: parsed.activeId,
+          lanes: parsed.lanes
+        };
+      } catch (error) {
+        console.warn(error);
+        return null;
+      }
+    }
+
+    function sanitizeLane(lane, index) {
+      const cleanRows = Array.isArray(lane.rows) ? lane.rows.map(sanitizeRow).filter(Boolean) : [];
+      return {
+        id: lane.id || uid(),
+        title: lane.title || `電卓 ${index + 1}`,
+        rows: cleanRows,
+	        current: typeof lane.current === "string" ? lane.current : "0",
+	        pendingOp: operators.includes(lane.pendingOp) ? lane.pendingOp : "+",
+	        isTyping: Boolean(lane.isTyping),
+	        justEvaluated: Boolean(lane.justEvaluated),
+	        editingRowId: typeof lane.editingRowId === "string" ? lane.editingRowId : "",
+	        memory: Number.isFinite(Number(lane.memory)) ? Number(lane.memory) : 0
+	      };
+    }
+
+    function sanitizeRow(row) {
+      if (!row || typeof row !== "object") return null;
+      if (row.type === "note") {
+        return { id: row.id || uid(), type: "note", note: row.note || "" };
+      }
+      if (row.type === "memory") {
+        return {
+          id: row.id || uid(),
+          type: "memory",
+          mode: row.mode === "M-" || row.mode === "MC" ? row.mode : "M+",
+          value: typeof row.value === "string" ? row.value : "0"
+        };
+      }
+	      return {
+	        id: row.id || uid(),
+	        type: "number",
+	        op: operators.includes(row.op) ? row.op : "+",
+	        value: typeof row.value === "string" ? row.value : "0",
+	        qty: typeof row.qty === "string" ? row.qty : "1",
+	        memo: typeof row.memo === "string" ? row.memo : "",
+	        detailOpen: Boolean(row.detailOpen)
+	      };
+	    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      statusLineEl.textContent = `自動保存 ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`;
+    }
+
+    function render() {
+      ensureActiveLane();
+      recomputeAllMemory();
+      lanesEl.innerHTML = state.lanes.map(renderLane).join("");
+      laneCountEl.textContent = `${state.lanes.length}連`;
+      refreshSummary();
+      saveState();
+    }
+
+	    function renderLane(lane) {
+	      const activeClass = lane.id === state.activeId ? " is-active" : "";
+	      const segment = calculateSegment(lane, true);
+	      const totalClass = segment.ok && segment.value < 0 ? " is-negative" : "";
+	      const memoryClass = lane.memory < 0 ? " is-negative" : "";
+	      return `
+	        <article class="lane${activeClass}" data-lane-id="${escapeHtml(lane.id)}" draggable="true">
+	          <header class="lane-head">
+	            <span class="drag-handle" aria-hidden="true">≡</span>
+	            <input class="lane-title" aria-label="電卓名" value="${escapeAttr(lane.title)}">
+	            <div class="lane-actions">
+	              <button class="mini-btn" type="button" data-action="duplicate-lane" title="複製" aria-label="複製">⧉</button>
+	              <button class="mini-btn" type="button" data-action="clear-lane" title="この電卓を空にする" aria-label="この電卓を空にする">⌧</button>
+              <button class="mini-btn" type="button" data-action="delete-lane" title="削除" aria-label="削除">×</button>
+            </div>
+	          </header>
+	          <div class="lane-total">
+	            <span class="lane-total-label">Total</span>
+	            <output class="lane-total-value${totalClass}" data-meter="hero-total">${escapeHtml(formatResult(segment))}</output>
+	          </div>
+	          <div class="tape">
+	            ${lane.rows.length ? lane.rows.map((row) => renderRow(row, lane)).join("") : `<div class="empty">No entries</div>`}
+          </div>
+          <footer class="lane-foot">
+	            <div class="meter memory">
+	              <span class="meter-label">Memory</span>
+	              <span class="meter-value${memoryClass}" data-meter="memory">${escapeHtml(formatDisplay(lane.memory))}</span>
+	            </div>
+          </footer>
+        </article>
+      `;
+    }
+
+	    function renderRow(row, lane = null) {
+      if (row.type === "note") {
+        return `
+          <div class="tape-row note" data-row-id="${escapeHtml(row.id)}">
+            <span class="note-badge">メモ</span>
+            <input class="note-value" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.note)}" placeholder="短いメモ">
+            <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除">×</button>
+          </div>
+        `;
+      }
+
+	      if (row.type === "memory") {
+	        const label = row.mode === "MC" ? "MC" : row.mode;
+	        const memoryAmount = row.mode === "MC" ? 0 : signedMemoryValue(row);
+	        const memoryClass = memoryAmount < 0 ? " is-negative" : "";
+	        return `
+	          <div class="tape-row memory-row" data-row-id="${escapeHtml(row.id)}">
+	            <span class="memory-badge">${escapeHtml(label)}</span>
+	            <span class="memory-value${memoryClass}">${escapeHtml(formatDisplay(memoryAmount))}</span>
+	            <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除">×</button>
+	          </div>
+	        `;
+	      }
+
+	      const rowNegative = isNegativeRow(row);
+	      const subtotalNegative = isNegativeContribution(row) || isNegativeNumber(effectiveRowValue(row));
+	      const detailClass = row.detailOpen ? " is-open" : "";
+		      const summary = rowDetailSummary(row);
+		      const editingClass = lane?.editingRowId === row.id ? " is-editing" : "";
+		      return `
+		        <div class="tape-row number${editingClass}" data-row-id="${escapeHtml(row.id)}">
+	          <select class="row-op" data-row-id="${escapeHtml(row.id)}" aria-label="演算子">
+	            ${operators.map((op) => `<option value="${escapeHtml(op)}"${op === row.op ? " selected" : ""}>${escapeHtml(op)}</option>`).join("")}
+	          </select>
+	          <div class="row-entry">
+	            <div class="row-main">
+	              <input class="row-value${rowNegative ? " is-negative" : ""}" data-row-id="${escapeHtml(row.id)}" inputmode="decimal" value="${escapeAttr(row.value)}" aria-label="単価">
+	            </div>
+		            <div class="row-detail${detailClass}">
+		              <label class="qty-box">個数
+		                <input class="row-qty" data-row-id="${escapeHtml(row.id)}" inputmode="decimal" value="${escapeAttr(row.qty || "1")}" aria-label="個数">
+		              </label>
+		              <label class="memo-box">商品メモ
+		                <input class="row-memo" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.memo || "")}" placeholder="例: 冷蔵庫本体" aria-label="商品メモ">
+		              </label>
+		            </div>
+		            ${!row.detailOpen && summary.length ? `<div class="row-extra-summary">${summary.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}</div>` : ""}
+	            <output class="row-subtotal${subtotalNegative ? " is-negative" : ""}" data-row-id="${escapeHtml(row.id)}">${escapeHtml(formatLineSubtotal(row))}</output>
+	          </div>
+	          <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除">×</button>
+	        </div>
+	      `;
+	    }
+
+    function handleControl(control) {
+      if (control === "add-lane") {
+        const lane = createLane(`電卓 ${state.lanes.length + 1}`);
+        state.lanes.push(lane);
+        state.activeId = lane.id;
+        render();
+        scrollLaneIntoView(lane.id);
+        return;
+      }
+
+      if (control === "remove-active") {
+        removeLane(state.activeId);
+        return;
+      }
+
+      if (control === "export") {
+        exportTextEl.value = buildExportText();
+        exportDialog.showModal();
+        exportTextEl.focus();
+        exportTextEl.select();
+        return;
+      }
+
+      if (control === "reset-all") {
+        if (!confirm("すべての電卓を初期状態に戻しますか。")) return;
+        state = createDefaultState();
+        render();
+        showToast("初期化しました");
+      }
+    }
+
+    function handleLaneAction(action, button) {
+      const laneEl = button.closest(".lane");
+      const lane = getLane(laneEl?.dataset.laneId);
+      if (!lane) return;
+
+      if (action === "duplicate-lane") {
+	        const copy = JSON.parse(JSON.stringify(lane));
+	        copy.id = uid();
+	        copy.title = `${lane.title} copy`;
+	        copy.rows = copy.rows.map((row) => ({ ...row, id: uid() }));
+	        copy.editingRowId = "";
+	        state.lanes.splice(state.lanes.indexOf(lane) + 1, 0, copy);
+        state.activeId = copy.id;
+        render();
+        scrollLaneIntoView(copy.id);
+        return;
+      }
+
+      if (action === "clear-lane") {
+        lane.rows = [];
+        lane.current = "0";
+	        lane.pendingOp = "+";
+	        lane.isTyping = false;
+	        lane.justEvaluated = false;
+	        lane.editingRowId = "";
+	        lane.memory = 0;
+        render();
+        return;
+      }
+
+      if (action === "delete-lane") {
+        removeLane(lane.id);
+        return;
+      }
+
+	      if (action === "delete-row") {
+	        if (lane.editingRowId === button.dataset.rowId) {
+	          lane.editingRowId = "";
+	          lane.current = "0";
+	          lane.isTyping = false;
+	        }
+	        lane.rows = lane.rows.filter((row) => row.id !== button.dataset.rowId);
+        recomputeMemory(lane);
+        render();
+      }
+    }
+
+    function handleKey(key) {
+      const lane = activeLane();
+      if (!lane) return;
+
+      if (/^\d$/.test(key) || key === "00") {
+        inputDigit(lane, key);
+	      } else if (key === ".") {
+	        inputDecimal(lane);
+	      } else if (operators.includes(key)) {
+	        inputOperator(lane, key);
+	      } else if (key === "commit") {
+	        commitCurrent(lane, true);
+      } else if (key === "C") {
+        clearCurrent(lane);
+      } else if (key === "AC") {
+        clearActiveSegment(lane);
+      } else if (key === "back") {
+        backspace(lane);
+	      } else if (key === "+/-") {
+	        toggleSign(lane);
+	      } else if (key === "%") {
+	        percent(lane);
+	      } else if (key === "note") {
+	        addNote(lane);
+      } else if (key === "M+") {
+        memoryAdd(lane, 1);
+      } else if (key === "M-") {
+        memoryAdd(lane, -1);
+      } else if (key === "MR") {
+        memoryRecall(lane);
+      } else if (key === "MC") {
+        memoryClear(lane);
+      }
+
+      render();
+    }
+
+	    function inputDigit(lane, digit) {
+	      if (lane.justEvaluated) {
+	        clearActiveSegment(lane, { keepMemoryRows: true });
+	      }
+	      lane.justEvaluated = false;
+
+	      if (!lane.isTyping || lane.current === "0") {
+	        lane.current = digit === "00" ? "0" : digit;
+	      } else {
+	        lane.current += digit;
+	      }
+
+	      lane.current = trimInputLength(lane.current);
+	      lane.isTyping = true;
+	      ensureEditableNumberRow(lane);
+	      syncEditingRowValue(lane);
+	    }
+
+	    function inputDecimal(lane) {
+	      if (lane.justEvaluated) {
+        clearActiveSegment(lane, { keepMemoryRows: true });
+      }
+      lane.justEvaluated = false;
+
+      if (!lane.isTyping) {
+        lane.current = "0.";
+	      } else if (!lane.current.includes(".")) {
+	        lane.current += ".";
+	      }
+	      lane.isTyping = true;
+	      ensureEditableNumberRow(lane);
+	      syncEditingRowValue(lane);
+	    }
+
+	    function inputOperator(lane, op) {
+	      if (lane.justEvaluated) {
+	        const result = parseNumber(lane.current);
+	        replaceActiveSegment(lane, Number.isFinite(result) ? [{ id: uid(), type: "number", op: "+", value: formatPlain(result) }] : []);
+	        lane.current = "0";
+	        lane.isTyping = false;
+	        lane.justEvaluated = false;
+	        lane.editingRowId = "";
+	        lane.pendingOp = op;
+	        return;
+	      }
+
+      if (lane.isTyping) {
+        commitCurrent(lane, true);
+      }
+      lane.pendingOp = op;
+    }
+
+		    function commitCurrent(lane, force = false) {
+	      const row = activeNumberRow(lane);
+	      if (!lane.isTyping && !force && !row) return false;
+	      const value = parseNumber(lane.current);
+	      if (!Number.isFinite(value)) {
+	        showToast("数値を確認してください");
+	        return false;
+	      }
+
+	      if (row) {
+	        row.value = normalizeInput(lane.current);
+	        row.detailOpen = false;
+	      } else {
+	        lane.rows.push({
+	          id: uid(),
+	          type: "number",
+		        op: lane.pendingOp,
+		        value: normalizeInput(lane.current),
+		        qty: "1",
+		        memo: "",
+		        detailOpen: false
+		      });
+	      }
+	      lane.current = "0";
+	      lane.pendingOp = "+";
+	      lane.isTyping = false;
+	      lane.justEvaluated = false;
+	      lane.editingRowId = "";
+	      return true;
+	    }
+
+	    function clearCurrent(lane) {
+	      lane.current = "0";
+	      lane.isTyping = false;
+	      lane.justEvaluated = false;
+	      syncEditingRowValue(lane);
+	    }
+
+    function clearActiveSegment(lane, options = {}) {
+      const start = options.keepMemoryRows ? activeSegmentStart(lane) : 0;
+      lane.rows.splice(start);
+      lane.current = "0";
+	      lane.pendingOp = "+";
+	      lane.isTyping = false;
+	      lane.justEvaluated = false;
+	      lane.editingRowId = "";
+	      recomputeMemory(lane);
+	    }
+
+	    function replaceActiveSegment(lane, rows) {
+	      const start = activeSegmentStart(lane);
+	      lane.rows.splice(start, lane.rows.length - start, ...rows);
+	      lane.editingRowId = "";
+	      recomputeMemory(lane);
+	    }
+
+	    function activeNumberRow(lane) {
+	      const row = lane.editingRowId ? getRow(lane, lane.editingRowId) : null;
+	      return row && row.type === "number" ? row : null;
+	    }
+
+	    function ensureEditableNumberRow(lane) {
+	      const row = activeNumberRow(lane);
+	      if (row) return row;
+	      const nextRow = {
+	        id: uid(),
+	        type: "number",
+	        op: lane.pendingOp,
+	        value: lane.current || "0",
+	        qty: "1",
+	        memo: "",
+	        detailOpen: false
+	      };
+	      lane.rows.push(nextRow);
+	      lane.editingRowId = nextRow.id;
+	      return nextRow;
+	    }
+
+	    function syncEditingRowValue(lane) {
+	      const row = activeNumberRow(lane);
+	      if (!row) return;
+	      row.value = lane.current || "0";
+	      row.op = operators.includes(lane.pendingOp) ? lane.pendingOp : row.op;
+	    }
+
+	    function backspace(lane) {
+      if (lane.justEvaluated) {
+        clearCurrent(lane);
+        return;
+      }
+	      if (!lane.isTyping || lane.current.length <= 1 || (lane.current.length === 2 && lane.current.startsWith("-"))) {
+	        lane.current = "0";
+	        lane.isTyping = false;
+	        syncEditingRowValue(lane);
+	        return;
+	      }
+	      lane.current = lane.current.slice(0, -1);
+	      syncEditingRowValue(lane);
+	    }
+
+    function toggleSign(lane) {
+      if (lane.current === "0") return;
+	      lane.current = lane.current.startsWith("-") ? lane.current.slice(1) : `-${lane.current}`;
+	      lane.isTyping = true;
+	      lane.justEvaluated = false;
+	      ensureEditableNumberRow(lane);
+	      syncEditingRowValue(lane);
+	    }
+
+    function percent(lane) {
+      const value = parseNumber(lane.current);
+	      if (!Number.isFinite(value)) return;
+	      lane.current = formatPlain(value / 100);
+	      lane.isTyping = true;
+	      lane.justEvaluated = false;
+	      ensureEditableNumberRow(lane);
+	      syncEditingRowValue(lane);
+	    }
+
+    function addNote(lane) {
+      lane.rows.push({
+        id: uid(),
+        type: "note",
+        note: ""
+      });
+      lane.justEvaluated = false;
+    }
+
+    function memoryAdd(lane, direction) {
+      if (lane.isTyping) {
+        commitCurrent(lane, true);
+      }
+      const result = calculateSegment(lane, false);
+      if (!result.ok) {
+        showToast(result.label);
+        return;
+      }
+      lane.rows.push({
+        id: uid(),
+        type: "memory",
+        mode: direction > 0 ? "M+" : "M-",
+        value: formatPlain(result.value)
+      });
+      lane.current = "0";
+      lane.pendingOp = "+";
+      lane.isTyping = false;
+      lane.justEvaluated = false;
+      recomputeMemory(lane);
+    }
+
+	    function memoryRecall(lane) {
+	      lane.current = formatPlain(lane.memory);
+	      lane.isTyping = true;
+	      lane.justEvaluated = false;
+	      syncEditingRowValue(lane);
+	    }
+
+    function memoryClear(lane) {
+      lane.rows.push({
+        id: uid(),
+        type: "memory",
+        mode: "MC",
+        value: "0"
+      });
+      lane.current = "0";
+      lane.pendingOp = "+";
+      lane.isTyping = false;
+      lane.justEvaluated = false;
+      recomputeMemory(lane);
+    }
+
+	    function calculateSegment(lane, includeCurrent) {
+	      const start = activeSegmentStart(lane);
+	      const rows = lane.rows.slice(start).filter((row) => row.type === "number");
+	      if (includeCurrent && lane.isTyping && !activeNumberRow(lane)) {
+	        rows.push({ type: "number", op: lane.pendingOp, value: lane.current });
+	      }
+	      return calculateRows(rows);
+    }
+
+	    function calculateRows(rows) {
+	      const terms = [];
+	      let hasNumber = false;
+
+	      for (const row of rows) {
+	        const value = effectiveRowValue(row);
+	        if (!Number.isFinite(value)) {
+          return { ok: false, value: NaN, label: "入力エラー" };
+	        }
+
+	        hasNumber = true;
+	        if (row.op === "+") terms.push(value);
+	        if (row.op === "-") terms.push(-value);
+	        if (row.op === "×") {
+	          if (!terms.length) {
+	            terms.push(value);
+	          } else {
+	            terms[terms.length - 1] *= value;
+	          }
+	        }
+	        if (row.op === "÷") {
+	          if (value === 0) return { ok: false, value: NaN, label: "0で割れません" };
+	          if (!terms.length) {
+	            terms.push(value);
+	          } else {
+	            terms[terms.length - 1] /= value;
+	          }
+	        }
+	      }
+
+	      const total = terms.reduce((sum, value) => sum + value, 0);
+	      return { ok: true, value: hasNumber ? total : 0, label: "" };
+	    }
+
+	    function effectiveRowValue(row) {
+	      const value = parseNumber(row.value);
+	      const qty = parseQuantity(row.qty);
+	      if (!Number.isFinite(value) || !Number.isFinite(qty)) return NaN;
+	      return value * qty;
+	    }
+
+	    function signedContribution(row) {
+	      const value = effectiveRowValue(row);
+	      if (!Number.isFinite(value)) return NaN;
+	      if (row.op === "-") return -value;
+	      return value;
+	    }
+
+	    function signedMemoryValue(row) {
+	      const value = parseNumber(row.value);
+	      if (!Number.isFinite(value)) return NaN;
+	      return row.mode === "M-" ? -value : value;
+	    }
+
+	    function isNegativeNumber(value) {
+	      const number = typeof value === "number" ? value : parseNumber(value);
+	      return Number.isFinite(number) && number < 0;
+	    }
+
+	    function isNegativeContribution(row) {
+	      return isNegativeNumber(signedContribution(row));
+	    }
+
+	    function isNegativeRow(row) {
+	      return isNegativeNumber(row.value) || isNegativeContribution(row);
+	    }
+
+	    function rowDetailSummary(row) {
+	      const lines = [];
+	      const qty = parseQuantity(row.qty);
+	      if (Number.isFinite(qty) && (qty !== 1 || row.memo)) {
+	        lines.push(`${formatQuantity(row.qty)}個`);
+	      }
+	      if (row.memo) {
+	        lines.push(row.memo);
+	      }
+	      return lines;
+	    }
+
+	    function formatLineSubtotal(row) {
+	      const qty = parseQuantity(row.qty);
+	      const subtotal = effectiveRowValue(row);
+	      if (!Number.isFinite(qty) || !Number.isFinite(subtotal)) return "小計 入力エラー";
+	      return `小計 ${formatDisplay(subtotal)}`;
+	    }
+
+    function activeSegmentStart(lane) {
+      for (let index = lane.rows.length - 1; index >= 0; index -= 1) {
+        if (lane.rows[index].type === "memory") return index + 1;
+      }
+      return 0;
+    }
+
+    function recomputeAllMemory() {
+      state.lanes.forEach(recomputeMemory);
+    }
+
+    function recomputeMemory(lane) {
+      let memory = 0;
+      for (const row of lane.rows) {
+        if (row.type !== "memory") continue;
+        const value = parseNumber(row.value);
+        if (row.mode === "MC") memory = 0;
+        if (row.mode === "M+" && Number.isFinite(value)) memory += value;
+        if (row.mode === "M-" && Number.isFinite(value)) memory -= value;
+      }
+      lane.memory = memory;
+    }
+
+	    function refreshLaneMeters(lane) {
+	      recomputeMemory(lane);
+	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(lane.id)}"]`);
+	      if (!laneEl) return;
+	      const segment = calculateSegment(lane, true);
+	      const heroTotalEl = laneEl.querySelector('[data-meter="hero-total"]');
+	      const memoryEl = laneEl.querySelector('[data-meter="memory"]');
+	      heroTotalEl.textContent = formatResult(segment);
+	      heroTotalEl.classList.toggle("is-negative", segment.ok && segment.value < 0);
+	      memoryEl.textContent = formatDisplay(lane.memory);
+	      memoryEl.classList.toggle("is-negative", lane.memory < 0);
+	      refreshSummary();
+	    }
+
+	    function refreshRowSubtotal(lane, row) {
+	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(lane.id)}"]`);
+	      const rowEl = laneEl?.querySelector(`[data-row-id="${cssEscape(row.id)}"]`);
+	      const subtotalEl = rowEl?.querySelector(".row-subtotal");
+	      const valueEl = rowEl?.querySelector(".row-value");
+	      if (subtotalEl) {
+	        subtotalEl.textContent = formatLineSubtotal(row);
+	        subtotalEl.classList.toggle("is-negative", isNegativeContribution(row) || isNegativeNumber(effectiveRowValue(row)));
+	      }
+	      if (valueEl) {
+	        valueEl.classList.toggle("is-negative", isNegativeRow(row));
+	      }
+	    }
+
+	    function refreshSummary() {
+	      const lane = activeLane();
+	      if (!lane) return;
+	      const segment = calculateSegment(lane, true);
+	      const currentIsNegative = isNegativeNumber(lane.current);
+	      activeTitleEl.textContent = lane.title;
+	      sideDisplayEl.textContent = displayCurrent(lane);
+	      activeInputEl.textContent = `入力 ${lane.pendingOp} ${displayCurrent(lane)}`;
+	      activeTotalEl.textContent = `合計 ${formatResult(segment)}`;
+	      activeMemoryEl.textContent = `M ${formatDisplay(lane.memory)}`;
+	      sideDisplayEl.classList.toggle("is-negative", currentIsNegative);
+	      activeInputEl.classList.toggle("is-negative", currentIsNegative);
+	      activeTotalEl.classList.toggle("is-negative", segment.ok && segment.value < 0);
+	      activeMemoryEl.classList.toggle("is-negative", lane.memory < 0);
+	      laneCountEl.textContent = `${state.lanes.length}連`;
+	    }
+
+    function displayCurrent(lane) {
+      if (lane.isTyping) return lane.current;
+      return formatDisplay(lane.current);
+    }
+
+    function formatResult(result) {
+      if (!result.ok) return result.label;
+      return formatDisplay(result.value);
+    }
+
+    function formatDisplay(value) {
+      const number = parseNumber(value);
+      if (!Number.isFinite(number)) return "入力エラー";
+      const rounded = roundFloating(number);
+      return rounded.toLocaleString("ja-JP", {
+        maximumFractionDigits: 10
+      });
+    }
+
+    function formatPlain(value) {
+      const number = parseNumber(value);
+      if (!Number.isFinite(number)) return "0";
+      return String(roundFloating(number));
+    }
+
+    function roundFloating(number) {
+      if (!Number.isFinite(number)) return number;
+      const rounded = Math.round((number + Number.EPSILON) * 1e10) / 1e10;
+      return Object.is(rounded, -0) ? 0 : rounded;
+    }
+
+    function normalizeInput(value) {
+      const raw = String(value).replace(/,/g, "").trim();
+      const number = Number(raw);
+      return Number.isFinite(number) ? formatPlain(number) : raw;
+    }
+
+    function parseNumber(value) {
+      const raw = String(value).replace(/,/g, "").trim();
+      if (!raw || raw === "-" || raw === "." || raw === "-.") return NaN;
+      return Number(raw);
+    }
+
+    function parseQuantity(value) {
+      const raw = String(value ?? "1").replace(/,/g, "").trim();
+      if (!raw) return 1;
+      const qty = Number(raw);
+      return Number.isFinite(qty) ? qty : NaN;
+    }
+
+    function normalizeQuantityInput(value) {
+      const raw = String(value).replace(/[^\d.]/g, "");
+      const parts = raw.split(".");
+      if (parts.length <= 1) return raw;
+      return `${parts[0]}.${parts.slice(1).join("")}`;
+    }
+
+    function formatQuantity(value) {
+      const qty = parseQuantity(value);
+      if (!Number.isFinite(qty)) return "入力エラー";
+      return roundFloating(qty).toLocaleString("ja-JP", {
+        maximumFractionDigits: 3
+      });
+    }
+
+    function trimInputLength(value) {
+      const sign = value.startsWith("-") ? "-" : "";
+      const body = sign ? value.slice(1) : value;
+      if (body.length <= 16) return value;
+      return sign + body.slice(0, 16);
+    }
+
+    function getLane(id) {
+      return state.lanes.find((lane) => lane.id === id);
+    }
+
+    function getRow(lane, id) {
+      return lane.rows.find((row) => row.id === id);
+    }
+
+    function activeLane() {
+      return getLane(state.activeId);
+    }
+
+    function ensureActiveLane() {
+      if (!state.lanes.length) {
+        state = createDefaultState();
+      }
+      if (!getLane(state.activeId)) {
+        state.activeId = state.lanes[0].id;
+      }
+    }
+
+		    function setActiveLane(id) {
+		      if (!id || state.activeId === id) return;
+		      state.activeId = id;
+		      document.querySelectorAll(".lane").forEach((laneEl) => {
+		        laneEl.classList.toggle("is-active", laneEl.dataset.laneId === id);
+	      });
+	      refreshSummary();
+		      saveState();
+		    }
+
+	    function isRowControlTarget(target) {
+	      return Boolean(target.closest("button, select, textarea, .lane-title, .row-qty, .row-memo, .note-value, .qty-box, .memo-box"));
+	    }
+
+	    function focusDetailBox(box) {
+	      const input = box.querySelector("input");
+	      if (!input) return;
+	      requestAnimationFrame(() => {
+	        input.focus();
+	        input.select?.();
+	      });
+	    }
+
+	    function selectNumberRow(laneId, rowId) {
+	      const lane = getLane(laneId);
+	      const row = lane ? getRow(lane, rowId) : null;
+	      if (!lane || !row || row.type !== "number") return;
+	      state.activeId = lane.id;
+	      lane.editingRowId = row.id;
+	      lane.current = row.value || "0";
+	      lane.pendingOp = row.op;
+	      lane.isTyping = true;
+	      lane.justEvaluated = false;
+	      document.querySelectorAll(".lane").forEach((laneEl) => {
+	        laneEl.classList.toggle("is-active", laneEl.dataset.laneId === lane.id);
+	      });
+	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(lane.id)}"]`);
+	      laneEl?.querySelectorAll(".tape-row.number").forEach((rowEl) => {
+	        rowEl.classList.toggle("is-editing", rowEl.dataset.rowId === row.id);
+	      });
+	      refreshSummary();
+	      saveState();
+	    }
+
+			    function openRowDetail(laneId, rowId) {
+	      clearLongPress();
+	      const lane = getLane(laneId);
+	      const row = lane ? getRow(lane, rowId) : null;
+	      if (!row || row.type !== "number") return;
+	      selectNumberRow(laneId, rowId);
+	      if (row.detailOpen) {
+	        focusRowDetail(row.id);
+	        return;
+	      }
+	      row.detailOpen = true;
+	      render();
+	      focusRowDetail(row.id);
+	    }
+
+	    function focusRowDetail(rowId) {
+	      requestAnimationFrame(() => {
+	        const rowEl = lanesEl.querySelector(`[data-row-id="${cssEscape(rowId)}"]`);
+	        const target = rowEl?.querySelector(".row-qty");
+	        target?.focus();
+	        target?.select();
+	      });
+	    }
+
+	    function clearLongPress() {
+	      if (!longPressTimer) return;
+	      window.clearTimeout(longPressTimer);
+	      longPressTimer = null;
+	    }
+
+	    function markDropTarget(targetLaneEl) {
+	      lanesEl.querySelectorAll(".lane.is-drop-target").forEach((laneEl) => {
+	        laneEl.classList.remove("is-drop-target");
+	      });
+	      targetLaneEl.classList.add("is-drop-target");
+	    }
+
+	    function clearDragState() {
+	      draggedLaneId = null;
+	      lanesEl.querySelectorAll(".lane.is-dragging, .lane.is-drop-target").forEach((laneEl) => {
+	        laneEl.classList.remove("is-dragging", "is-drop-target");
+	      });
+	    }
+
+	    function reorderLane(sourceId, targetId) {
+	      if (!sourceId || !targetId || sourceId === targetId) return;
+	      const sourceIndex = state.lanes.findIndex((lane) => lane.id === sourceId);
+	      const targetIndex = state.lanes.findIndex((lane) => lane.id === targetId);
+	      if (sourceIndex < 0 || targetIndex < 0) return;
+	      const [lane] = state.lanes.splice(sourceIndex, 1);
+	      state.lanes.splice(targetIndex, 0, lane);
+	      state.activeId = sourceId;
+	      render();
+	      scrollLaneIntoView(sourceId);
+	    }
+
+	    function removeLane(id) {
+	      if (state.lanes.length <= 1) {
+	        showToast("最後の1つは残します");
+        return;
+      }
+      const index = state.lanes.findIndex((lane) => lane.id === id);
+      if (index < 0) return;
+      state.lanes.splice(index, 1);
+      if (state.activeId === id) {
+        state.activeId = state.lanes[Math.max(0, index - 1)].id;
+      }
+      render();
+    }
+
+    function scrollLaneIntoView(id) {
+      requestAnimationFrame(() => {
+        const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(id)}"]`);
+        laneEl?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      });
+    }
+
+    function buildExportText() {
+      const lines = [];
+      lines.push("N連リスト電卓");
+      lines.push(new Date().toLocaleString("ja-JP"));
+      lines.push("");
+
+      for (const lane of state.lanes) {
+        const segment = calculateSegment(lane, true);
+        lines.push(`[${lane.title}]`);
+        lines.push(`Total\t${formatResult(segment)}`);
+        lines.push(`Memory\t${formatDisplay(lane.memory)}`);
+        lines.push("Type\tOp\tUnit\tQty\tSubtotal\tMemo");
+        for (const row of lane.rows) {
+          if (row.type === "number") {
+            lines.push(`Number\t${row.op}\t${normalizeInput(row.value)}\t${formatQuantity(row.qty)}\t${formatDisplay(effectiveRowValue(row))}\t${row.memo || ""}`);
+          }
+          if (row.type === "note") lines.push(`Memo\t\t\t\t\t${row.note || ""}`);
+          if (row.type === "memory") lines.push(`${row.mode}\t\t${row.value}\t\t\t`);
+        }
+	        if (lane.isTyping && !activeNumberRow(lane)) {
+	          lines.push(`Current\t${lane.pendingOp}\t${lane.current}`);
+	        }
+        lines.push("");
+      }
+
+      return lines.join("\n");
+    }
+
+    async function copyExportText() {
+      try {
+        await navigator.clipboard.writeText(exportTextEl.value);
+        showToast("コピーしました");
+      } catch (error) {
+        exportTextEl.focus();
+        exportTextEl.select();
+        document.execCommand("copy");
+        showToast("コピーしました");
+      }
+    }
+
+    function downloadExportText() {
+      const blob = new Blob([exportTextEl.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `nren-calc-${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      showToast("TXTを作成しました");
+    }
+
+    function mapKeyboardKey(event) {
+      if (/^\d$/.test(event.key)) return event.key;
+      if (event.key === ".") return ".";
+      if (event.key === "+") return "+";
+      if (event.key === "-") return "-";
+      if (event.key === "*") return "×";
+      if (event.key === "/") return "÷";
+      if (event.key === "Enter") return "commit";
+      if (event.key === "=") return null;
+      if (event.key === "Backspace") return "back";
+      if (event.key === "Escape") return "AC";
+      if (event.key === "%") return "%";
+      return null;
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toastEl.classList.remove("show");
+      }, 1600);
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#96;");
+    }
+
+    function cssEscape(value) {
+      if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(value);
+      return String(value).replace(/"/g, '\\"');
+    }
+  </script>
+</body>
+</html>
