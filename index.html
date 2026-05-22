@@ -306,7 +306,6 @@
 	      padding: 14px 14px 10px;
 	      border-bottom: 1px solid var(--line);
 	      background: #fbfdff;
-	      cursor: grab;
 	    }
 
 	    .drag-handle {
@@ -319,6 +318,7 @@
 	      font-size: 1rem;
 	      font-weight: 850;
 	      line-height: 1;
+	      cursor: grab;
 	      touch-action: none;
 	    }
 
@@ -526,9 +526,9 @@
 	    }
 
 	    .qty-box {
-	      display: inline-flex;
+	      display: grid;
+	      grid-template-columns: auto minmax(0, 1fr);
 	      align-items: center;
-	      justify-content: space-between;
 		      gap: 10px;
 		      width: 100%;
 	      min-width: 0;
@@ -559,8 +559,13 @@
 
 		    .row-qty {
 		      width: min(120px, 48vw);
-		      height: 100%;
+		      height: auto;
+		      min-height: 0;
+		      display: flex;
+		      align-items: center;
+		      justify-content: flex-end;
 		      padding: 0 2px;
+		      line-height: 1;
 	      text-align: right;
 	      color: var(--ink);
 	      font-weight: 850;
@@ -1001,6 +1006,10 @@
 	      .lane-title {
 	        min-height: 44px;
 	      }
+
+	      .qty-box .row-qty {
+	        min-height: 0;
+	      }
 	    }
 
     @media (max-width: 560px) {
@@ -1358,9 +1367,9 @@
 				        return;
 				      }
 
-		      const laneReorderSurface = event.target.closest(".lane-head, .lane-total");
-		      if (laneReorderSurface && !event.target.closest("input, button, select, textarea")) {
-		        startLaneReorderPress(event, laneReorderSurface.closest(".lane"));
+		      const laneReorderHandle = event.target.closest(".drag-handle");
+		      if (laneReorderHandle && !event.target.closest("input, button, select, textarea")) {
+		        startLaneReorderPress(event, laneReorderHandle.closest(".lane"));
 		        return;
 		      }
 
@@ -1399,7 +1408,7 @@
 
 	    lanesEl.addEventListener("dragstart", (event) => {
 	      const laneEl = event.target.closest(".lane");
-	      if (!laneEl || event.target.closest("input, select, button, textarea")) {
+	      if (!laneEl || !event.target.closest(".drag-handle") || event.target.closest("input, select, button, textarea")) {
 	        event.preventDefault();
 	        return;
 	      }
@@ -1572,9 +1581,9 @@
 	      const totalClass = segment.ok && segment.value < 0 ? " is-negative" : "";
 	      const memoryClass = lane.memory < 0 ? " is-negative" : "";
 	      return `
-	        <article class="lane${activeClass}" data-lane-id="${escapeHtml(lane.id)}" draggable="true">
+	        <article class="lane${activeClass}" data-lane-id="${escapeHtml(lane.id)}">
 	          <header class="lane-head">
-	            <span class="drag-handle" aria-hidden="true">≡</span>
+	            <span class="drag-handle" aria-hidden="true" title="並べ替え">≡</span>
 	            <input class="lane-title" aria-label="電卓名" value="${escapeAttr(lane.title)}">
 	            <div class="lane-actions">
 	              <button class="mini-btn" type="button" data-action="duplicate-lane" title="複製" aria-label="複製">⧉</button>
@@ -2428,6 +2437,7 @@
 	        id: laneId,
 	        pointerId,
 	        ghost,
+	        originRect: rect,
 	        offsetX: clientX - rect.left,
 	        offsetY: clientY - rect.top,
 	        lastX: clientX,
@@ -2448,8 +2458,8 @@
 	    function handleLaneReorderMove(event) {
 	      if (!laneDragState || event.pointerId !== laneDragState.pointerId) return;
 	      event.preventDefault();
-	      moveLaneGhost(event.clientX, event.clientY);
 	      const targetLaneEl = laneReorderTargetAt(event.clientX, event.clientY);
+	      moveLaneGhost(event.clientX, event.clientY, null, targetLaneEl);
 	      if (!targetLaneEl || targetLaneEl.dataset.laneId === laneDragState.id) return;
 	      reorderLane(laneDragState.id, targetLaneEl.dataset.laneId, { scroll: false });
 	    }
@@ -2492,10 +2502,11 @@
 	      laneDragTimer = null;
 	    }
 
-	    function moveLaneGhost(clientX, clientY, tilt = null) {
+	    function moveLaneGhost(clientX, clientY, tilt = null, targetLaneEl = null) {
 	      if (!laneDragState?.ghost) return;
 	      const x = clientX - laneDragState.offsetX;
-	      const y = clientY - laneDragState.offsetY;
+	      const lockToRow = shouldLockLaneDragToRow(clientY, targetLaneEl);
+	      const y = lockToRow ? laneDragState.originRect.top : clientY - laneDragState.offsetY;
 	      const nextTilt = tilt ?? Math.max(-1.1, Math.min(1.1, (clientX - laneDragState.lastX) * 0.045));
 	      laneDragState.lastX = clientX;
 	      laneDragState.lastY = clientY;
@@ -2507,6 +2518,15 @@
 	      const targetLaneEl = document.elementFromPoint(clientX, clientY)?.closest(".lane");
 	      if (!targetLaneEl || !lanesEl.contains(targetLaneEl)) return null;
 	      return targetLaneEl.dataset.laneId === laneDragState.id ? null : targetLaneEl;
+	    }
+
+	    function shouldLockLaneDragToRow(clientY, targetLaneEl) {
+	      if (!laneDragState?.originRect) return false;
+	      if (targetLaneEl) {
+	        return isSameLaneRow(laneDragState.originRect, targetLaneEl.getBoundingClientRect());
+	      }
+	      const rect = laneDragState.originRect;
+	      return clientY >= rect.top - 36 && clientY <= rect.bottom + 36;
 	    }
 
 	    function markDropTarget(targetLaneEl) {
@@ -2531,14 +2551,17 @@
 	      return rects;
 	    }
 
-	    function animateLaneLayout(previousRects) {
+	    function animateLaneLayout(previousRects, options = {}) {
 	      requestAnimationFrame(() => {
 	        lanesEl.querySelectorAll(".lane").forEach((laneEl) => {
 	          const previous = previousRects.get(laneEl.dataset.laneId);
 	          if (!previous) return;
 	          const next = laneEl.getBoundingClientRect();
 	          const dx = previous.left - next.left;
-	          const dy = previous.top - next.top;
+	          let dy = previous.top - next.top;
+	          if (options.horizontalOnly && isSameLaneRow(previous, next)) {
+	            dy = 0;
+	          }
 	          if (!dx && !dy) return;
 	          laneEl.style.transition = "none";
 	          laneEl.style.transform = `translate(${dx}px, ${dy}px)`;
@@ -2555,9 +2578,18 @@
 	      });
 	    }
 
+	    function isSameLaneRow(firstRect, secondRect) {
+	      if (!firstRect || !secondRect) return false;
+	      const tolerance = Math.max(32, Math.min(firstRect.height, secondRect.height) * 0.08);
+	      return Math.abs(firstRect.top - secondRect.top) <= tolerance;
+	    }
+
 		    function reorderLane(sourceId, targetId, options = {}) {
 		      if (!sourceId || !targetId || sourceId === targetId) return;
 	      const before = snapshotLaneRects();
+	      const sourceRect = before.get(sourceId);
+	      const targetRect = before.get(targetId);
+	      const horizontalOnly = isSameLaneRow(sourceRect, targetRect);
 		      const sourceIndex = state.lanes.findIndex((lane) => lane.id === sourceId);
 		      const targetIndex = state.lanes.findIndex((lane) => lane.id === targetId);
 		      if (sourceIndex < 0 || targetIndex < 0) return;
@@ -2565,7 +2597,7 @@
 		      state.lanes.splice(targetIndex, 0, lane);
 		      state.activeId = sourceId;
 		      render();
-	      animateLaneLayout(before);
+	      animateLaneLayout(before, { horizontalOnly });
 	      if (laneDragState?.id === sourceId) {
 	        lanesEl.classList.add("is-reordering");
 	        lanesEl.querySelector(`[data-lane-id="${cssEscape(sourceId)}"]`)?.classList.add("is-touch-dragging");
