@@ -205,6 +205,10 @@
       margin: 0 auto;
     }
 
+	    .lanes.is-reordering .lane {
+	      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+	    }
+
 	    .lane {
 	      min-width: 0;
 	      height: min(640px, calc(100svh - 116px));
@@ -213,15 +217,24 @@
       grid-template-rows: auto auto minmax(0, 1fr) auto;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--surface);
-      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-	      overflow: hidden;
+	      background: var(--surface);
+	      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+		      overflow: hidden;
+	      will-change: transform;
 	      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 	    }
 
 	    .lane.is-dragging {
 	      opacity: 0.55;
 	      transform: scale(0.99);
+	    }
+
+	    .lane.is-touch-dragging {
+	      opacity: 0.78;
+	      position: relative;
+	      z-index: 6;
+	      box-shadow: var(--shadow);
+	      transform: scale(0.985);
 	    }
 
 	    .lane.is-drop-target {
@@ -342,16 +355,16 @@
       font-size: 0.92rem;
     }
 
-    .tape-row {
-      display: grid;
-      grid-template-columns: 56px minmax(0, 1fr) 42px;
-      align-items: center;
-      min-height: 56px;
-      gap: 10px;
-      padding: 10px 12px 10px 14px;
-      border-bottom: 1px solid #edf2fb;
-      transition: background 120ms ease;
-    }
+	    .tape-row {
+	      display: grid;
+	      grid-template-columns: 56px minmax(0, 1fr) 42px;
+	      align-items: center;
+	      min-height: 56px;
+	      gap: 10px;
+	      padding: 10px 12px 10px 14px;
+	      border-bottom: 1px solid #edf2fb;
+	      transition: background 160ms ease, transform 160ms ease;
+	    }
 
 	    .tape-row.number {
 	      align-items: start;
@@ -392,12 +405,13 @@
       font-variant-numeric: tabular-nums;
     }
 
-	    .row-value {
-	      text-align: right;
-	      font-size: 1.18rem;
-	      font-weight: 700;
-	      cursor: text;
-	    }
+		    .row-value {
+		      text-align: right;
+		      font-size: 1.18rem;
+		      font-weight: 700;
+		      cursor: pointer;
+	      pointer-events: none;
+		    }
 
     .row-entry {
       min-width: 0;
@@ -412,14 +426,29 @@
 	      gap: 8px;
 	    }
 
-		    .row-detail {
-		      display: none;
-		      grid-template-columns: 1fr;
-		      gap: 8px;
-		    }
+	    .row-detail {
+	      display: grid;
+	      grid-template-rows: 0fr;
+	      opacity: 0;
+	      overflow: hidden;
+	      transform: translateY(-4px);
+	      transition: grid-template-rows 190ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease, transform 190ms cubic-bezier(0.22, 1, 0.36, 1);
+	      pointer-events: none;
+	    }
 
 	    .row-detail.is-open {
+	      grid-template-rows: 1fr;
+	      opacity: 1;
+	      transform: translateY(0);
+	      pointer-events: auto;
+	    }
+
+	    .row-detail-inner {
+	      min-height: 0;
 	      display: grid;
+	      grid-template-columns: 1fr;
+	      gap: 8px;
+	      overflow: hidden;
 	    }
 
 	    .row-extra-summary {
@@ -442,23 +471,28 @@
 	      white-space: nowrap;
 	    }
 
-		    .qty-box {
-		      display: inline-flex;
-		      align-items: center;
-		      justify-content: space-between;
-	      gap: 10px;
-	      width: 100%;
+	    .tape-row.has-open-detail .row-extra-summary {
+	      display: none;
+	    }
+
+	    .qty-box {
+	      display: inline-flex;
+	      align-items: center;
+	      justify-content: space-between;
+		      gap: 10px;
+		      width: 100%;
 	      min-width: 0;
 	      height: 42px;
 	      padding: 0 10px;
 	      border: 1px solid var(--line);
 	      border-radius: 7px;
-	      background: var(--surface-2);
-	      color: var(--muted);
-	      font-size: 0.9rem;
-		      font-weight: 800;
-		      cursor: text;
-		    }
+		      background: var(--surface-2);
+		      color: var(--muted);
+		      font-size: 0.9rem;
+	      font-weight: 800;
+	      text-align: left;
+	      cursor: pointer;
+	    }
 
 	    .memo-box {
 	      display: grid;
@@ -480,6 +514,7 @@
 	      text-align: right;
 	      color: var(--ink);
 	      font-weight: 850;
+	      font-variant-numeric: tabular-nums;
 	    }
 
     .row-memo {
@@ -1132,9 +1167,11 @@
     const toastEl = document.getElementById("toast");
     const sideDisplayEl = document.getElementById("sideDisplay");
 
-    let toastTimer = null;
-    let longPressTimer = null;
-    let draggedLaneId = null;
+	    let toastTimer = null;
+	    let longPressTimer = null;
+	    let laneDragTimer = null;
+	    let laneDragState = null;
+	    let draggedLaneId = null;
     let state = restoreState() || createDefaultState();
     ensureActiveLane();
     recomputeAllMemory();
@@ -1160,13 +1197,10 @@
 					        focusDetailBox(detailBox);
 					      }
 
-				      const rowEl = event.target.closest(".tape-row.number");
-				      if (rowEl && !isRowControlTarget(event.target)) {
-			        selectNumberRow(rowEl.closest(".lane")?.dataset.laneId, rowEl.dataset.rowId);
-			        if (event.target.closest(".row-value")) {
-			          requestAnimationFrame(() => event.target.closest(".row-value")?.select?.());
-			        }
-			      }
+					      const rowEl = event.target.closest(".tape-row.number");
+					      if (rowEl && !isRowControlTarget(event.target)) {
+				        selectNumberRow(rowEl.closest(".lane")?.dataset.laneId, rowEl.dataset.rowId);
+				      }
 
 		      const button = event.target.closest("[data-action]");
 		      if (!button) return;
@@ -1243,50 +1277,67 @@
 	      }
 	    });
 
-	    lanesEl.addEventListener("focusin", (event) => {
-	      const target = event.target;
-	      if (!target.matches(".lane-title, .row-value")) return;
-	      if (target.matches(".row-value")) {
-	        selectNumberRow(target.closest(".lane")?.dataset.laneId, target.dataset.rowId);
-	      }
-	      requestAnimationFrame(() => target.select?.());
-	    });
+		    lanesEl.addEventListener("focusin", (event) => {
+		      const target = event.target;
+		      if (!target.matches(".lane-title")) return;
+		      requestAnimationFrame(() => target.select?.());
+		    });
 
 	    lanesEl.addEventListener("focusout", (event) => {
 	      const target = event.target;
 	      if (!target.matches(".row-qty, .row-memo")) return;
-	      const rowEl = target.closest(".tape-row.number");
-	      const lane = getLane(target.closest(".lane")?.dataset.laneId);
-	      const row = lane ? getRow(lane, target.dataset.rowId) : null;
+		      const rowEl = target.closest(".tape-row.number");
+		      const lane = getLane(target.closest(".lane")?.dataset.laneId);
+		      const row = lane ? getRow(lane, target.dataset.rowId) : null;
 	      if (!rowEl || !row || rowEl.contains(event.relatedTarget)) return;
 	      setTimeout(() => {
-	        row.detailOpen = false;
-	        render();
+	        if (rowEl.contains(document.activeElement)) return;
+	        if (lane.editingRowId === row.id && lane.editingField === "qty") return;
+	        closeRowDetail(lane, row);
 	      }, 0);
-	    });
-
-			    lanesEl.addEventListener("pointerdown", (event) => {
-			      if (event.button && event.button !== 0) return;
-			      const detailBox = event.target.closest(".qty-box, .memo-box");
-			      if (detailBox) {
-			        focusDetailBox(detailBox);
-			        if (!event.target.matches("input")) {
-			          event.preventDefault();
-			        }
-			        return;
-			      }
-			      const rowEl = event.target.closest(".tape-row.number");
-			      if (!rowEl || isRowControlTarget(event.target)) return;
-		      const laneId = rowEl.closest(".lane")?.dataset.laneId;
-		      const rowId = rowEl.dataset.rowId;
-		      clearLongPress();
-		      longPressTimer = window.setTimeout(() => {
-		        openRowDetail(laneId, rowId);
-		      }, 560);
 		    });
 
+			    lanesEl.addEventListener("pointerdown", (event) => {
+				      if (event.button && event.button !== 0) return;
+				      const detailBox = event.target.closest(".qty-box, .memo-box");
+				      if (detailBox) {
+				        focusDetailBox(detailBox);
+				        if (!event.target.matches(".row-memo")) {
+				          event.preventDefault();
+				        }
+				        return;
+				      }
+
+		      const laneReorderSurface = event.target.closest(".lane-head, .lane-total");
+		      if (laneReorderSurface && !event.target.closest("input, button, select, textarea")) {
+		        startLaneReorderPress(event, laneReorderSurface.closest(".lane"));
+		        return;
+		      }
+
+				      const rowEl = event.target.closest(".tape-row.number");
+				      if (!rowEl || isRowControlTarget(event.target)) return;
+			      const laneId = rowEl.closest(".lane")?.dataset.laneId;
+			      const rowId = rowEl.dataset.rowId;
+		      event.preventDefault();
+		      selectNumberRow(laneId, rowId);
+			      clearLongPress();
+			      longPressTimer = window.setTimeout(() => {
+			        openRowDetail(laneId, rowId);
+			      }, 560);
+			    });
+
+	    lanesEl.addEventListener("pointermove", (event) => {
+	      if (laneDragState) {
+	        handleLaneReorderMove(event);
+	      }
+	    });
+
 	    for (const eventName of ["pointerup", "pointercancel", "pointerleave"]) {
-	      lanesEl.addEventListener(eventName, clearLongPress);
+	      lanesEl.addEventListener(eventName, (event) => {
+	        clearLongPress();
+	        clearLaneDragTimer();
+	        if (laneDragState) endLaneReorder(event);
+	      });
 	    }
 
 		    lanesEl.addEventListener("contextmenu", (event) => {
@@ -1382,6 +1433,7 @@
 	        isTyping: false,
 	        justEvaluated: false,
 	        editingRowId: "",
+	        editingField: "value",
 	        memory: 0
 	      };
     }
@@ -1421,6 +1473,7 @@
 	        isTyping: Boolean(lane.isTyping),
 	        justEvaluated: Boolean(lane.justEvaluated),
 	        editingRowId: typeof lane.editingRowId === "string" ? lane.editingRowId : "",
+	        editingField: lane.editingField === "qty" ? "qty" : "value",
 	        memory: Number.isFinite(Number(lane.memory)) ? Number(lane.memory) : 0
 	      };
     }
@@ -1521,26 +1574,29 @@
 	      }
 
 	      const rowNegative = isNegativeRow(row);
-	      const subtotalNegative = isNegativeContribution(row) || isNegativeNumber(effectiveRowValue(row));
-	      const detailClass = row.detailOpen ? " is-open" : "";
+		      const subtotalNegative = isNegativeContribution(row) || isNegativeNumber(effectiveRowValue(row));
+		      const detailClass = row.detailOpen ? " is-open" : "";
+		      const detailOpenClass = row.detailOpen ? " has-open-detail" : "";
 		      const summary = rowDetailSummary(row);
 		      const editingClass = lane?.editingRowId === row.id ? " is-editing" : "";
 		      return `
-		        <div class="tape-row number${editingClass}" data-row-id="${escapeHtml(row.id)}">
+		        <div class="tape-row number${editingClass}${detailOpenClass}" data-row-id="${escapeHtml(row.id)}">
 	          <select class="row-op" data-row-id="${escapeHtml(row.id)}" aria-label="演算子">
 	            ${operators.map((op) => `<option value="${escapeHtml(op)}"${op === row.op ? " selected" : ""}>${escapeHtml(op)}</option>`).join("")}
 	          </select>
-	          <div class="row-entry">
-	            <div class="row-main">
-	              <input class="row-value${rowNegative ? " is-negative" : ""}" data-row-id="${escapeHtml(row.id)}" inputmode="decimal" value="${escapeAttr(row.value)}" aria-label="単価">
-	            </div>
+		          <div class="row-entry">
+		            <div class="row-main">
+		              <input class="row-value${rowNegative ? " is-negative" : ""}" data-row-id="${escapeHtml(row.id)}" inputmode="none" value="${escapeAttr(row.value)}" aria-label="単価" readonly tabindex="-1">
+		            </div>
 		            <div class="row-detail${detailClass}">
-		              <label class="qty-box">個数
-		                <input class="row-qty" data-row-id="${escapeHtml(row.id)}" inputmode="decimal" value="${escapeAttr(row.qty || "1")}" aria-label="個数">
-		              </label>
-		              <label class="memo-box">商品メモ
-		                <input class="row-memo" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.memo || "")}" placeholder="例: 冷蔵庫本体" aria-label="商品メモ">
-		              </label>
+		              <div class="row-detail-inner">
+		                <button class="qty-box" type="button" data-row-id="${escapeHtml(row.id)}" aria-label="個数を電卓で入力">個数
+		                  <span class="row-qty" data-row-id="${escapeHtml(row.id)}">${escapeHtml(formatQuantity(row.qty || "1"))}</span>
+		                </button>
+		                <label class="memo-box">商品メモ
+		                  <input class="row-memo" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.memo || "")}" placeholder="例: 冷蔵庫本体" aria-label="商品メモ">
+		                </label>
+		              </div>
 		            </div>
 		            ${!row.detailOpen && summary.length ? `<div class="row-extra-summary">${summary.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}</div>` : ""}
 	            <output class="row-subtotal${subtotalNegative ? " is-negative" : ""}" data-row-id="${escapeHtml(row.id)}">${escapeHtml(formatLineSubtotal(row))}</output>
@@ -1592,6 +1648,7 @@
 	        copy.title = `${lane.title} copy`;
 	        copy.rows = copy.rows.map((row) => ({ ...row, id: uid() }));
 	        copy.editingRowId = "";
+	        copy.editingField = "value";
 	        state.lanes.splice(state.lanes.indexOf(lane) + 1, 0, copy);
         state.activeId = copy.id;
         render();
@@ -1606,6 +1663,7 @@
 	        lane.isTyping = false;
 	        lane.justEvaluated = false;
 	        lane.editingRowId = "";
+	        lane.editingField = "value";
 	        lane.memory = 0;
         render();
         return;
@@ -1619,6 +1677,7 @@
 	      if (action === "delete-row") {
 	        if (lane.editingRowId === button.dataset.rowId) {
 	          lane.editingRowId = "";
+	          lane.editingField = "value";
 	          lane.current = "0";
 	          lane.isTyping = false;
 	        }
@@ -1700,6 +1759,12 @@
 	    }
 
 	    function inputOperator(lane, op) {
+	      if (lane.editingField === "qty" && activeNumberRow(lane)) {
+	        commitCurrent(lane, true);
+	        lane.pendingOp = op;
+	        return;
+	      }
+
 	      if (lane.justEvaluated) {
 	        const result = parseNumber(lane.current);
 	        replaceActiveSegment(lane, Number.isFinite(result) ? [{ id: uid(), type: "number", op: "+", value: formatPlain(result) }] : []);
@@ -1707,6 +1772,7 @@
 	        lane.isTyping = false;
 	        lane.justEvaluated = false;
 	        lane.editingRowId = "";
+	        lane.editingField = "value";
 	        lane.pendingOp = op;
 	        return;
 	      }
@@ -1717,18 +1783,30 @@
       lane.pendingOp = op;
     }
 
-		    function commitCurrent(lane, force = false) {
-	      const row = activeNumberRow(lane);
-	      if (!lane.isTyping && !force && !row) return false;
-	      const value = parseNumber(lane.current);
-	      if (!Number.isFinite(value)) {
+			    function commitCurrent(lane, force = false) {
+		      const row = activeNumberRow(lane);
+		      if (!lane.isTyping && !force && !row) return false;
+		      const value = parseNumber(lane.current);
+		      if (!Number.isFinite(value)) {
 	        showToast("数値を確認してください");
 	        return false;
+		      }
+
+	      if (row && lane.editingField === "qty") {
+	        row.qty = normalizeQuantityInput(lane.current) || "1";
+	        closeRowDetail(lane, row);
+	        lane.current = "0";
+	        lane.pendingOp = "+";
+	        lane.isTyping = false;
+	        lane.justEvaluated = false;
+	        lane.editingRowId = "";
+	        lane.editingField = "value";
+	        return true;
 	      }
 
-	      if (row) {
-	        row.value = normalizeInput(lane.current);
-	        row.detailOpen = false;
+		      if (row) {
+		        row.value = normalizeInput(lane.current);
+		        row.detailOpen = false;
 	      } else {
 	        lane.rows.push({
 	          id: uid(),
@@ -1742,14 +1820,15 @@
 	      }
 	      lane.current = "0";
 	      lane.pendingOp = "+";
-	      lane.isTyping = false;
-	      lane.justEvaluated = false;
-	      lane.editingRowId = "";
-	      return true;
-	    }
+		      lane.isTyping = false;
+		      lane.justEvaluated = false;
+		      lane.editingRowId = "";
+	      lane.editingField = "value";
+		      return true;
+		    }
 
 	    function clearCurrent(lane) {
-	      lane.current = "0";
+	      lane.current = lane.editingField === "qty" ? "1" : "0";
 	      lane.isTyping = false;
 	      lane.justEvaluated = false;
 	      syncEditingRowValue(lane);
@@ -1763,6 +1842,7 @@
 	      lane.isTyping = false;
 	      lane.justEvaluated = false;
 	      lane.editingRowId = "";
+	      lane.editingField = "value";
 	      recomputeMemory(lane);
 	    }
 
@@ -1770,6 +1850,7 @@
 	      const start = activeSegmentStart(lane);
 	      lane.rows.splice(start, lane.rows.length - start, ...rows);
 	      lane.editingRowId = "";
+	      lane.editingField = "value";
 	      recomputeMemory(lane);
 	    }
 
@@ -1778,10 +1859,11 @@
 	      return row && row.type === "number" ? row : null;
 	    }
 
-	    function ensureEditableNumberRow(lane) {
-	      const row = activeNumberRow(lane);
-	      if (row) return row;
-	      const nextRow = {
+		    function ensureEditableNumberRow(lane) {
+		      const row = activeNumberRow(lane);
+		      if (row) return row;
+	      lane.editingField = "value";
+		      const nextRow = {
 	        id: uid(),
 	        type: "number",
 	        op: lane.pendingOp,
@@ -1795,12 +1877,16 @@
 	      return nextRow;
 	    }
 
-	    function syncEditingRowValue(lane) {
-	      const row = activeNumberRow(lane);
-	      if (!row) return;
+		    function syncEditingRowValue(lane) {
+		      const row = activeNumberRow(lane);
+		      if (!row) return;
+	      if (lane.editingField === "qty") {
+	        row.qty = normalizeQuantityInput(lane.current) || "1";
+	        return;
+	      }
 	      row.value = lane.current || "0";
 	      row.op = operators.includes(lane.pendingOp) ? lane.pendingOp : row.op;
-	    }
+		    }
 
 	    function backspace(lane) {
       if (lane.justEvaluated) {
@@ -1860,11 +1946,12 @@
         mode: direction > 0 ? "M+" : "M-",
         value: formatPlain(result.value)
       });
-      lane.current = "0";
-      lane.pendingOp = "+";
-      lane.isTyping = false;
-      lane.justEvaluated = false;
-      recomputeMemory(lane);
+	      lane.current = "0";
+	      lane.pendingOp = "+";
+	      lane.isTyping = false;
+	      lane.justEvaluated = false;
+	      lane.editingField = "value";
+	      recomputeMemory(lane);
     }
 
 	    function memoryRecall(lane) {
@@ -1874,7 +1961,7 @@
 	      syncEditingRowValue(lane);
 	    }
 
-    function memoryClear(lane) {
+	    function memoryClear(lane) {
       lane.rows.push({
         id: uid(),
         type: "memory",
@@ -1882,10 +1969,12 @@
         value: "0"
       });
       lane.current = "0";
-      lane.pendingOp = "+";
-      lane.isTyping = false;
-      lane.justEvaluated = false;
-      recomputeMemory(lane);
+	      lane.pendingOp = "+";
+	      lane.isTyping = false;
+	      lane.justEvaluated = false;
+	      lane.editingRowId = "";
+	      lane.editingField = "value";
+	      recomputeMemory(lane);
     }
 
 	    function calculateSegment(lane, includeCurrent) {
@@ -2022,26 +2111,31 @@
 
 	    function refreshRowSubtotal(lane, row) {
 	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(lane.id)}"]`);
-	      const rowEl = laneEl?.querySelector(`[data-row-id="${cssEscape(row.id)}"]`);
-	      const subtotalEl = rowEl?.querySelector(".row-subtotal");
-	      const valueEl = rowEl?.querySelector(".row-value");
-	      if (subtotalEl) {
-	        subtotalEl.textContent = formatLineSubtotal(row);
-	        subtotalEl.classList.toggle("is-negative", isNegativeContribution(row) || isNegativeNumber(effectiveRowValue(row)));
+		      const rowEl = laneEl?.querySelector(`[data-row-id="${cssEscape(row.id)}"]`);
+		      const subtotalEl = rowEl?.querySelector(".row-subtotal");
+		      const valueEl = rowEl?.querySelector(".row-value");
+	      const qtyEl = rowEl?.querySelector(".row-qty");
+		      if (subtotalEl) {
+		        subtotalEl.textContent = formatLineSubtotal(row);
+		        subtotalEl.classList.toggle("is-negative", isNegativeContribution(row) || isNegativeNumber(effectiveRowValue(row)));
+		      }
+		      if (valueEl) {
+		        valueEl.classList.toggle("is-negative", isNegativeRow(row));
+		      }
+	      if (qtyEl) {
+	        qtyEl.textContent = formatQuantity(row.qty || "1");
 	      }
-	      if (valueEl) {
-	        valueEl.classList.toggle("is-negative", isNegativeRow(row));
-	      }
-	    }
+		    }
 
-	    function refreshSummary() {
-	      const lane = activeLane();
-	      if (!lane) return;
-	      const segment = calculateSegment(lane, true);
-	      const currentIsNegative = isNegativeNumber(lane.current);
-	      activeTitleEl.textContent = lane.title;
-	      sideDisplayEl.textContent = displayCurrent(lane);
-	      activeInputEl.textContent = `入力 ${lane.pendingOp} ${displayCurrent(lane)}`;
+		    function refreshSummary() {
+		      const lane = activeLane();
+		      if (!lane) return;
+		      const segment = calculateSegment(lane, true);
+		      const currentIsNegative = isNegativeNumber(lane.current);
+	      const isQtyEditing = lane.editingField === "qty" && Boolean(activeNumberRow(lane));
+		      activeTitleEl.textContent = lane.title;
+		      sideDisplayEl.textContent = displayCurrent(lane);
+	      activeInputEl.textContent = isQtyEditing ? `個数 ${displayCurrent(lane)}` : `入力 ${lane.pendingOp} ${displayCurrent(lane)}`;
 	      activeTotalEl.textContent = `合計 ${formatResult(segment)}`;
 	      activeMemoryEl.textContent = `M ${formatDisplay(lane.memory)}`;
 	      sideDisplayEl.classList.toggle("is-negative", currentIsNegative);
@@ -2159,8 +2253,17 @@
 	    }
 
 	    function focusDetailBox(box) {
-	      const input = box.querySelector("input");
+	      const rowEl = box.closest(".tape-row.number");
+	      const laneId = box.closest(".lane")?.dataset.laneId;
+	      const rowId = rowEl?.dataset.rowId || box.dataset.rowId;
+	      if (box.classList.contains("qty-box")) {
+	        selectQuantityBox(laneId, rowId);
+	        return;
+	      }
+
+	      const input = box.querySelector(".row-memo");
 	      if (!input) return;
+	      selectNumberRow(laneId, rowId);
 	      requestAnimationFrame(() => {
 	        input.focus();
 	        input.select?.();
@@ -2173,6 +2276,7 @@
 	      if (!lane || !row || row.type !== "number") return;
 	      state.activeId = lane.id;
 	      lane.editingRowId = row.id;
+	      lane.editingField = "value";
 	      lane.current = row.value || "0";
 	      lane.pendingOp = row.op;
 	      lane.isTyping = true;
@@ -2188,6 +2292,28 @@
 	      saveState();
 	    }
 
+	    function selectQuantityBox(laneId, rowId) {
+	      const lane = getLane(laneId);
+	      const row = lane ? getRow(lane, rowId) : null;
+	      if (!lane || !row || row.type !== "number") return;
+	      state.activeId = lane.id;
+	      lane.editingRowId = row.id;
+	      lane.editingField = "qty";
+	      lane.current = row.qty || "1";
+	      lane.pendingOp = row.op;
+	      lane.isTyping = false;
+	      lane.justEvaluated = false;
+	      document.querySelectorAll(".lane").forEach((laneEl) => {
+	        laneEl.classList.toggle("is-active", laneEl.dataset.laneId === lane.id);
+	      });
+	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(lane.id)}"]`);
+	      laneEl?.querySelectorAll(".tape-row.number").forEach((item) => {
+	        item.classList.toggle("is-editing", item.dataset.rowId === row.id);
+	      });
+	      refreshSummary();
+	      saveState();
+	    }
+
 			    function openRowDetail(laneId, rowId) {
 	      clearLongPress();
 	      const lane = getLane(laneId);
@@ -2195,27 +2321,81 @@
 	      if (!row || row.type !== "number") return;
 	      selectNumberRow(laneId, rowId);
 	      if (row.detailOpen) {
-	        focusRowDetail(row.id);
 	        return;
 	      }
 	      row.detailOpen = true;
-	      render();
-	      focusRowDetail(row.id);
+	      const rowEl = lanesEl.querySelector(`[data-row-id="${cssEscape(row.id)}"]`);
+	      rowEl?.classList.add("has-open-detail");
+	      rowEl?.querySelector(".row-detail")?.classList.add("is-open");
+	      saveState();
 	    }
 
-	    function focusRowDetail(rowId) {
-	      requestAnimationFrame(() => {
-	        const rowEl = lanesEl.querySelector(`[data-row-id="${cssEscape(rowId)}"]`);
-	        const target = rowEl?.querySelector(".row-qty");
-	        target?.focus();
-	        target?.select();
+	    function closeRowDetail(lane, row) {
+	      if (!row || row.type !== "number") return;
+	      row.detailOpen = false;
+	      const rowEl = lanesEl.querySelector(`[data-row-id="${cssEscape(row.id)}"]`);
+	      rowEl?.querySelector(".row-detail")?.classList.remove("is-open");
+	      setTimeout(() => {
+	        rowEl?.classList.remove("has-open-detail");
+	        render();
+	      }, 190);
+	    }
+
+		    function clearLongPress() {
+		      if (!longPressTimer) return;
+		      window.clearTimeout(longPressTimer);
+		      longPressTimer = null;
+		    }
+
+	    function startLaneReorderPress(event, laneEl) {
+	      if (!laneEl) return;
+	      clearLaneDragTimer();
+	      laneDragTimer = window.setTimeout(() => {
+	        beginLaneReorder(laneEl.dataset.laneId, event.pointerId);
+	      }, 520);
+	    }
+
+	    function beginLaneReorder(laneId, pointerId) {
+	      laneDragTimer = null;
+	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(laneId)}"]`);
+	      if (!laneEl) return;
+	      laneDragState = { id: laneId, pointerId };
+	      lanesEl.classList.add("is-reordering");
+	      laneEl.classList.add("is-touch-dragging");
+	      try {
+	        lanesEl.setPointerCapture(pointerId);
+	      } catch (error) {
+	        // Pointer capture is best-effort; regular pointermove still works without it.
+	      }
+	    }
+
+	    function handleLaneReorderMove(event) {
+	      if (!laneDragState || event.pointerId !== laneDragState.pointerId) return;
+	      event.preventDefault();
+	      const targetLaneEl = document.elementFromPoint(event.clientX, event.clientY)?.closest(".lane");
+	      if (!targetLaneEl || targetLaneEl.dataset.laneId === laneDragState.id) return;
+	      reorderLane(laneDragState.id, targetLaneEl.dataset.laneId, { scroll: false });
+	    }
+
+	    function endLaneReorder(event) {
+	      if (event?.pointerId === laneDragState?.pointerId) {
+	        try {
+	          lanesEl.releasePointerCapture(event.pointerId);
+	        } catch (error) {
+	          // Pointer capture may already be released.
+	        }
+	      }
+	      lanesEl.classList.remove("is-reordering");
+	      lanesEl.querySelectorAll(".lane.is-touch-dragging").forEach((laneEl) => {
+	        laneEl.classList.remove("is-touch-dragging");
 	      });
+	      laneDragState = null;
 	    }
 
-	    function clearLongPress() {
-	      if (!longPressTimer) return;
-	      window.clearTimeout(longPressTimer);
-	      longPressTimer = null;
+	    function clearLaneDragTimer() {
+	      if (!laneDragTimer) return;
+	      window.clearTimeout(laneDragTimer);
+	      laneDragTimer = null;
 	    }
 
 	    function markDropTarget(targetLaneEl) {
@@ -2232,17 +2412,57 @@
 	      });
 	    }
 
-	    function reorderLane(sourceId, targetId) {
-	      if (!sourceId || !targetId || sourceId === targetId) return;
-	      const sourceIndex = state.lanes.findIndex((lane) => lane.id === sourceId);
-	      const targetIndex = state.lanes.findIndex((lane) => lane.id === targetId);
-	      if (sourceIndex < 0 || targetIndex < 0) return;
-	      const [lane] = state.lanes.splice(sourceIndex, 1);
-	      state.lanes.splice(targetIndex, 0, lane);
-	      state.activeId = sourceId;
-	      render();
-	      scrollLaneIntoView(sourceId);
+	    function snapshotLaneRects() {
+	      const rects = new Map();
+	      lanesEl.querySelectorAll(".lane").forEach((laneEl) => {
+	        rects.set(laneEl.dataset.laneId, laneEl.getBoundingClientRect());
+	      });
+	      return rects;
 	    }
+
+	    function animateLaneLayout(previousRects) {
+	      requestAnimationFrame(() => {
+	        lanesEl.querySelectorAll(".lane").forEach((laneEl) => {
+	          const previous = previousRects.get(laneEl.dataset.laneId);
+	          if (!previous) return;
+	          const next = laneEl.getBoundingClientRect();
+	          const dx = previous.left - next.left;
+	          const dy = previous.top - next.top;
+	          if (!dx && !dy) return;
+	          laneEl.style.transition = "none";
+	          laneEl.style.transform = `translate(${dx}px, ${dy}px)`;
+	          laneEl.getBoundingClientRect();
+	          requestAnimationFrame(() => {
+	            laneEl.style.transition = "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)";
+	            laneEl.style.transform = "";
+	            window.setTimeout(() => {
+	              laneEl.style.transition = "";
+	              laneEl.style.transform = "";
+	            }, 240);
+	          });
+	        });
+	      });
+	    }
+
+		    function reorderLane(sourceId, targetId, options = {}) {
+		      if (!sourceId || !targetId || sourceId === targetId) return;
+	      const before = snapshotLaneRects();
+		      const sourceIndex = state.lanes.findIndex((lane) => lane.id === sourceId);
+		      const targetIndex = state.lanes.findIndex((lane) => lane.id === targetId);
+		      if (sourceIndex < 0 || targetIndex < 0) return;
+		      const [lane] = state.lanes.splice(sourceIndex, 1);
+		      state.lanes.splice(targetIndex, 0, lane);
+		      state.activeId = sourceId;
+		      render();
+	      animateLaneLayout(before);
+	      if (laneDragState?.id === sourceId) {
+	        lanesEl.classList.add("is-reordering");
+	        lanesEl.querySelector(`[data-lane-id="${cssEscape(sourceId)}"]`)?.classList.add("is-touch-dragging");
+	      }
+	      if (options.scroll !== false) {
+	        scrollLaneIntoView(sourceId);
+	      }
+		    }
 
 	    function removeLane(id) {
 	      if (state.lanes.length <= 1) {
