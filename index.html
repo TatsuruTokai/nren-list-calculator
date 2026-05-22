@@ -187,6 +187,12 @@
       color: var(--accent-ink);
     }
 
+    .text-btn.is-active {
+      border-color: var(--green);
+      background: rgba(15, 118, 110, 0.12);
+      color: var(--green);
+    }
+
     .workspace {
       grid-column: 1;
       grid-row: 2;
@@ -298,6 +304,10 @@
 	      transform: translateY(-1px);
 	    }
 
+	    .lane.is-locked {
+	      border-color: rgba(15, 118, 110, 0.38);
+	    }
+
 	    .lane-head {
 	      display: grid;
 	      grid-template-columns: auto minmax(0, 1fr) auto;
@@ -342,6 +352,19 @@
     .lane-actions {
       display: flex;
       gap: 4px;
+    }
+
+    .lock-badge {
+      display: inline-grid;
+      place-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.12);
+      color: var(--green);
+      font-size: 0.72rem;
+      font-weight: 850;
+      white-space: nowrap;
     }
 
     .mini-btn {
@@ -557,6 +580,47 @@
 		      cursor: text;
 		    }
 
+	    .jan-box {
+	      display: grid;
+	      grid-template-columns: minmax(0, 1fr) auto;
+	      align-items: end;
+	      gap: 8px;
+	    }
+
+	    .jan-field {
+	      min-width: 0;
+	      display: grid;
+	      gap: 5px;
+	      padding: 9px 10px;
+	      border: 1px solid var(--line);
+	      border-radius: 7px;
+	      background: var(--surface-2);
+	      color: var(--muted);
+	      font-size: 0.84rem;
+	      font-weight: 800;
+	    }
+
+	    .row-jan {
+	      width: 100%;
+	      min-width: 0;
+	      border: 0;
+	      outline: 0;
+	      background: transparent;
+	      color: var(--ink);
+	      font-variant-numeric: tabular-nums;
+	    }
+
+	    .jan-lookup {
+	      height: 58px;
+	      padding: 0 12px;
+	      border: 1px solid var(--accent-line);
+	      border-radius: 7px;
+	      background: var(--accent-soft);
+	      color: var(--accent);
+	      font-weight: 850;
+	      white-space: nowrap;
+	    }
+
 		    .row-qty {
 		      width: min(120px, 48vw);
 		      height: auto;
@@ -701,7 +765,7 @@
     .dock-inner {
       height: 100%;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
       align-items: start;
       gap: 14px;
     }
@@ -755,6 +819,48 @@
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.08);
       font-variant-numeric: tabular-nums;
+    }
+
+    .shortcut-panel {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .shortcut-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .shortcut-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .shortcut-btn {
+      min-height: 40px;
+      max-width: 100%;
+      padding: 0 11px;
+      border: 1px solid var(--accent-line);
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .keypad {
@@ -854,6 +960,90 @@
       font-weight: 850;
     }
 
+    .dialog-body {
+      display: grid;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .dialog-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .field {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-width: 0;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 10px;
+      outline: 0;
+      background: var(--field-bg);
+      color: var(--ink);
+      font-weight: 750;
+    }
+
+    .fee-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .fee-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field-bg);
+    }
+
+    .fee-name {
+      min-width: 0;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fee-value {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .dialog-file {
+      width: 100%;
+      padding: 10px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: var(--field-bg);
+      color: var(--muted);
+    }
+
     .export-text {
       width: 100%;
       min-height: 360px;
@@ -890,6 +1080,29 @@
 	      opacity: 1;
 	      transform: translateX(-50%) translateY(0);
 	    }
+
+    .update-banner {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 30;
+      width: min(520px, calc(100vw - 28px));
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--accent-line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      transform: translateX(-50%);
+    }
+
+    .update-banner.show {
+      display: flex;
+    }
 
 	    @media (prefers-color-scheme: dark) {
 	      :root {
@@ -1064,7 +1277,7 @@
       .dock-inner {
         height: auto;
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto;
+        grid-template-rows: auto auto auto;
         gap: 10px;
       }
 
@@ -1084,6 +1297,10 @@
 	      .toast {
 	        bottom: 148px;
 	      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 420px) {
@@ -1137,7 +1354,10 @@
         <output class="count-pill" id="laneCount">3連</output>
         <button class="icon-btn primary" type="button" data-control="add-lane" title="電卓を追加" aria-label="電卓を追加">+</button>
         <button class="icon-btn" type="button" data-control="remove-active" title="選択中の電卓を削除" aria-label="選択中の電卓を削除">−</button>
+        <button class="text-btn" type="button" data-control="toggle-lock" id="lockToggle" title="選択中の電卓をロック">ロック</button>
+        <button class="text-btn" type="button" data-control="fee-settings" title="定型料金を編集">定型</button>
         <button class="text-btn" type="button" data-control="export" title="テキストを書き出す">書き出し</button>
+        <button class="text-btn" type="button" data-control="backup" title="バックアップと復元">保存/復元</button>
         <button class="text-btn" type="button" data-control="reset-all" title="すべて初期化">初期化</button>
       </nav>
     </header>
@@ -1156,6 +1376,13 @@
             <span id="activeTotal">合計 0</span>
             <span id="activeMemory">M 0</span>
           </div>
+        </div>
+        <div class="shortcut-panel" aria-label="定型料金ショートカット">
+          <div class="shortcut-head">
+            <span>定型料金</span>
+            <button class="mini-btn" type="button" data-control="fee-settings" title="定型料金を編集" aria-label="定型料金を編集">＋</button>
+          </div>
+          <div class="shortcut-list" id="feeShortcuts"></div>
         </div>
         <div class="keypad" id="keypad">
           <button class="key utility" type="button" data-key="AC">AC</button>
@@ -1208,21 +1435,83 @@
     </div>
   </dialog>
 
+  <dialog id="feeDialog">
+    <div class="dialog-head">
+      <h2 class="dialog-title">定型料金</h2>
+      <button class="icon-btn" type="button" data-fee-dialog="close" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="dialog-body">
+      <p class="dialog-note">よく使う料金を登録すると、右側のショートカットから現在の電卓へ追加できます。%指定は現在の商品代金合計を基準に計算します。</p>
+      <div class="form-grid">
+        <label class="field">名前
+          <input id="feeName" placeholder="例: 長期保証">
+        </label>
+        <label class="field">種類
+          <select id="feeType">
+            <option value="fixed">固定額</option>
+            <option value="percent">商品代金の%</option>
+          </select>
+        </label>
+        <label class="field">金額 / %
+          <input id="feeValue" inputmode="decimal" placeholder="例: 5">
+        </label>
+        <button class="text-btn primary" type="button" data-fee-dialog="add">追加</button>
+      </div>
+      <div class="fee-list" id="feeList"></div>
+    </div>
+  </dialog>
+
+  <dialog id="backupDialog">
+    <div class="dialog-head">
+      <h2 class="dialog-title">保存/復元</h2>
+      <button class="icon-btn" type="button" data-backup-dialog="close" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="dialog-body">
+      <p class="dialog-note">電卓、定型料金、JAN手入力辞書をJSONとして保存・復元します。</p>
+      <input class="dialog-file" id="backupFile" type="file" accept="application/json,.json">
+    </div>
+    <textarea class="export-text" id="backupText" spellcheck="false"></textarea>
+    <div class="dialog-actions">
+      <button class="text-btn" type="button" data-backup-dialog="restore">復元</button>
+      <button class="text-btn" type="button" data-backup-dialog="download">JSON保存</button>
+      <button class="text-btn primary" type="button" data-backup-dialog="copy">コピー</button>
+    </div>
+  </dialog>
+
+  <div class="update-banner" id="updateBanner">
+    <span>新しいバージョンがあります</span>
+    <button class="text-btn primary" type="button" id="updateReload">更新</button>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     const STORAGE_KEY = "nren-list-calculator-state-v1";
+    const SETTINGS_KEY = "nren-list-calculator-settings-v1";
+    const BACKUP_VERSION = 2;
     const operators = ["+", "-", "×", "÷"];
     const lanesEl = document.getElementById("lanes");
     const keypadEl = document.getElementById("keypad");
+    const feeShortcutsEl = document.getElementById("feeShortcuts");
     const laneCountEl = document.getElementById("laneCount");
     const statusLineEl = document.getElementById("statusLine");
+    const lockToggleEl = document.getElementById("lockToggle");
     const activeTitleEl = document.getElementById("activeTitle");
     const activeInputEl = document.getElementById("activeInput");
     const activeTotalEl = document.getElementById("activeTotal");
     const activeMemoryEl = document.getElementById("activeMemory");
     const exportDialog = document.getElementById("exportDialog");
     const exportTextEl = document.getElementById("exportText");
+    const feeDialog = document.getElementById("feeDialog");
+    const feeListEl = document.getElementById("feeList");
+    const feeNameEl = document.getElementById("feeName");
+    const feeTypeEl = document.getElementById("feeType");
+    const feeValueEl = document.getElementById("feeValue");
+    const backupDialog = document.getElementById("backupDialog");
+    const backupTextEl = document.getElementById("backupText");
+    const backupFileEl = document.getElementById("backupFile");
+    const updateBannerEl = document.getElementById("updateBanner");
+    const updateReloadEl = document.getElementById("updateReload");
     const toastEl = document.getElementById("toast");
     const sideDisplayEl = document.getElementById("sideDisplay");
 
@@ -1231,6 +1520,8 @@
 	    let laneDragTimer = null;
 	    let laneDragState = null;
 	    let draggedLaneId = null;
+	    let pendingServiceWorker = null;
+    let settings = restoreSettings();
     let state = restoreState() || createDefaultState();
     ensureActiveLane();
     recomputeAllMemory();
@@ -1240,6 +1531,17 @@
       const button = event.target.closest("[data-control]");
       if (!button) return;
       handleControl(button.dataset.control);
+    });
+
+    feeShortcutsEl.addEventListener("click", (event) => {
+      const feeButton = event.target.closest("[data-fee-id]");
+      if (feeButton) {
+        applyFeeShortcut(feeButton.dataset.feeId);
+        return;
+      }
+
+      const control = event.target.closest("[data-control]");
+      if (control) handleControl(control.dataset.control);
     });
 
 				    lanesEl.addEventListener("click", (event) => {
@@ -1271,6 +1573,7 @@
 	      const target = event.target;
 	      const lane = getLane(target.closest(".lane")?.dataset.laneId);
       if (!lane) return;
+      if (isLaneLocked(lane)) return;
 
       if (target.matches(".lane-title")) {
         lane.title = target.value.trim() || "無題";
@@ -1304,8 +1607,16 @@
 
 	      if (target.matches(".row-memo")) {
 	        row.memo = target.value;
+	        rememberManualJanProduct(row);
 	        saveState();
 	      }
+
+      if (target.matches(".row-jan")) {
+        row.jan = normalizeJanInput(target.value);
+        target.value = row.jan;
+        rememberManualJanProduct(row);
+        saveState();
+      }
 
       if (target.matches(".note-value")) {
         row.note = target.value;
@@ -1319,6 +1630,7 @@
       const lane = getLane(target.closest(".lane")?.dataset.laneId);
       const row = lane ? getRow(lane, target.dataset.rowId) : null;
 	      if (!row) return;
+	      if (!guardLaneUnlocked(lane)) return;
 		      row.op = target.value;
 		      if (lane.editingRowId === row.id) {
 		        lane.pendingOp = row.op;
@@ -1330,7 +1642,13 @@
 
 	    lanesEl.addEventListener("keydown", (event) => {
 	      if (event.key !== "Enter") return;
-	      if (event.target.matches(".row-value, .row-qty, .row-memo, .note-value, .lane-title")) {
+	      if (event.target.matches(".row-jan")) {
+	        event.preventDefault();
+	        const button = event.target.closest(".jan-box")?.querySelector("[data-action='lookup-jan']");
+	        if (button) handleLaneAction("lookup-jan", button);
+	        return;
+	      }
+	      if (event.target.matches(".row-value, .row-qty, .row-memo, .row-jan, .note-value, .lane-title")) {
 	        event.preventDefault();
 	        event.target.blur();
 	      }
@@ -1344,7 +1662,7 @@
 
 	    lanesEl.addEventListener("focusout", (event) => {
 	      const target = event.target;
-	      if (!target.matches(".row-qty, .row-memo")) return;
+	      if (!target.matches(".row-qty, .row-memo, .row-jan")) return;
 		      const rowEl = target.closest(".tape-row.number");
 		      const lane = getLane(target.closest(".lane")?.dataset.laneId);
 		      const row = lane ? getRow(lane, target.dataset.rowId) : null;
@@ -1474,6 +1792,61 @@
       }
     });
 
+    feeDialog.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-fee-dialog]");
+      if (!button) return;
+
+      if (button.dataset.feeDialog === "close") {
+        feeDialog.close();
+        return;
+      }
+
+      if (button.dataset.feeDialog === "add") {
+        addFeeFromForm();
+        return;
+      }
+
+      if (button.dataset.feeDialog === "delete") {
+        deleteFee(button.dataset.feeId);
+      }
+    });
+
+    backupDialog.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-backup-dialog]");
+      if (!button) return;
+
+      if (button.dataset.backupDialog === "close") {
+        backupDialog.close();
+        return;
+      }
+
+      if (button.dataset.backupDialog === "copy") {
+        await copyText(backupTextEl.value, "バックアップをコピーしました", backupTextEl);
+        return;
+      }
+
+      if (button.dataset.backupDialog === "download") {
+        downloadText(backupTextEl.value, `nren-calc-backup-${new Date().toISOString().slice(0, 10)}.json`, "application/json;charset=utf-8");
+        showToast("JSONを作成しました");
+        return;
+      }
+
+      if (button.dataset.backupDialog === "restore") {
+        restoreBackupText();
+      }
+    });
+
+    backupFileEl.addEventListener("change", async () => {
+      const file = backupFileEl.files?.[0];
+      if (!file) return;
+      backupTextEl.value = await file.text();
+    });
+
+    updateReloadEl.addEventListener("click", () => {
+      if (!pendingServiceWorker) return;
+      pendingServiceWorker.postMessage({ type: "SKIP_WAITING" });
+    });
+
     function createDefaultState() {
       const lanes = [createLane("電卓 1"), createLane("電卓 2"), createLane("電卓 3")];
       return {
@@ -1493,8 +1866,16 @@
 	        justEvaluated: false,
 	        editingRowId: "",
 	        editingField: "value",
-	        memory: 0
+	        memory: 0,
+	        locked: false
 	      };
+    }
+
+    function createDefaultSettings() {
+      return {
+        fees: [],
+        janProducts: {}
+      };
     }
 
     function uid() {
@@ -1508,17 +1889,66 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed.lanes) || parsed.lanes.length === 0) return null;
-        parsed.lanes = parsed.lanes.map(sanitizeLane);
-        return {
-          activeId: parsed.activeId,
-          lanes: parsed.lanes
-        };
+        return sanitizeState(JSON.parse(raw));
       } catch (error) {
         console.warn(error);
         return null;
       }
+    }
+
+    function restoreSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return createDefaultSettings();
+        return sanitizeSettings(JSON.parse(raw));
+      } catch (error) {
+        console.warn(error);
+        return createDefaultSettings();
+      }
+    }
+
+    function sanitizeState(candidate) {
+      if (!candidate || !Array.isArray(candidate.lanes) || candidate.lanes.length === 0) return null;
+      const lanes = candidate.lanes.map(sanitizeLane).filter(Boolean);
+      if (!lanes.length) return null;
+      return {
+        activeId: lanes.some((lane) => lane.id === candidate.activeId) ? candidate.activeId : lanes[0].id,
+        lanes
+      };
+    }
+
+    function sanitizeSettings(candidate) {
+      const defaults = createDefaultSettings();
+      if (!candidate || typeof candidate !== "object") return defaults;
+      const fees = Array.isArray(candidate.fees) ? candidate.fees.map(sanitizeFee).filter(Boolean) : [];
+      const janProducts = {};
+      if (candidate.janProducts && typeof candidate.janProducts === "object") {
+        Object.entries(candidate.janProducts).forEach(([jan, value]) => {
+          const cleanJan = normalizeJanInput(jan);
+          const title = typeof value === "string" ? value : value?.title;
+          if (cleanJan && title) {
+            janProducts[cleanJan] = {
+              title: String(title).trim(),
+              source: typeof value?.source === "string" ? value.source : "manual"
+            };
+          }
+        });
+      }
+      return { fees, janProducts };
+    }
+
+    function sanitizeFee(fee) {
+      if (!fee || typeof fee !== "object") return null;
+      const value = Number(String(fee.value ?? "").replace(/,/g, ""));
+      if (!Number.isFinite(value)) return null;
+      const name = String(fee.name || "").trim();
+      if (!name) return null;
+      return {
+        id: fee.id || uid(),
+        name,
+        type: fee.type === "percent" ? "percent" : "fixed",
+        value
+      };
     }
 
     function sanitizeLane(lane, index) {
@@ -1533,7 +1963,8 @@
 	        justEvaluated: Boolean(lane.justEvaluated),
 	        editingRowId: typeof lane.editingRowId === "string" ? lane.editingRowId : "",
 	        editingField: lane.editingField === "qty" ? "qty" : "value",
-	        memory: Number.isFinite(Number(lane.memory)) ? Number(lane.memory) : 0
+	        memory: Number.isFinite(Number(lane.memory)) ? Number(lane.memory) : 0,
+	        locked: Boolean(lane.locked)
 	      };
     }
 
@@ -1557,6 +1988,8 @@
 	        value: typeof row.value === "string" ? row.value : "0",
 	        qty: typeof row.qty === "string" ? row.qty : "1",
 	        memo: typeof row.memo === "string" ? row.memo : "",
+	        jan: typeof row.jan === "string" ? normalizeJanInput(row.jan) : "",
+	        isFee: Boolean(row.isFee),
 	        detailOpen: Boolean(row.detailOpen)
 	      };
 	    }
@@ -1566,29 +1999,38 @@
       statusLineEl.textContent = `自動保存 ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`;
     }
 
+    function saveSettings() {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
     function render() {
       ensureActiveLane();
       recomputeAllMemory();
       lanesEl.innerHTML = state.lanes.map(renderLane).join("");
       laneCountEl.textContent = `${state.lanes.length}連`;
+      renderFeeShortcuts();
       refreshSummary();
       saveState();
     }
 
 	    function renderLane(lane) {
 	      const activeClass = lane.id === state.activeId ? " is-active" : "";
+	      const lockedClass = lane.locked ? " is-locked" : "";
+	      const disabledAttr = lane.locked ? " disabled" : "";
+	      const readonlyAttr = lane.locked ? " readonly" : "";
 	      const segment = calculateSegment(lane, true);
 	      const totalClass = segment.ok && segment.value < 0 ? " is-negative" : "";
 	      const memoryClass = lane.memory < 0 ? " is-negative" : "";
 	      return `
-	        <article class="lane${activeClass}" data-lane-id="${escapeHtml(lane.id)}">
+	        <article class="lane${activeClass}${lockedClass}" data-lane-id="${escapeHtml(lane.id)}">
 	          <header class="lane-head">
 	            <span class="drag-handle" aria-hidden="true" title="並べ替え">≡</span>
-	            <input class="lane-title" aria-label="電卓名" value="${escapeAttr(lane.title)}">
+	            <input class="lane-title" aria-label="電卓名" value="${escapeAttr(lane.title)}"${readonlyAttr}>
 	            <div class="lane-actions">
+	              ${lane.locked ? `<span class="lock-badge">LOCK</span>` : ""}
 	              <button class="mini-btn" type="button" data-action="duplicate-lane" title="複製" aria-label="複製">⧉</button>
-	              <button class="mini-btn" type="button" data-action="clear-lane" title="この電卓を空にする" aria-label="この電卓を空にする">⌧</button>
-              <button class="mini-btn" type="button" data-action="delete-lane" title="削除" aria-label="削除">×</button>
+	              <button class="mini-btn" type="button" data-action="clear-lane" title="この電卓を空にする" aria-label="この電卓を空にする"${disabledAttr}>⌧</button>
+              <button class="mini-btn" type="button" data-action="delete-lane" title="削除" aria-label="削除"${disabledAttr}>×</button>
             </div>
 	          </header>
 	          <div class="lane-total">
@@ -1609,12 +2051,13 @@
     }
 
 	    function renderRow(row, lane = null) {
+      const disabledAttr = lane?.locked ? " disabled" : "";
       if (row.type === "note") {
         return `
           <div class="tape-row note" data-row-id="${escapeHtml(row.id)}">
             <span class="note-badge">メモ</span>
-            <input class="note-value" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.note)}" placeholder="短いメモ">
-            <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除">×</button>
+            <input class="note-value" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.note)}" placeholder="短いメモ"${disabledAttr}>
+            <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除"${disabledAttr}>×</button>
           </div>
         `;
       }
@@ -1627,7 +2070,7 @@
 	          <div class="tape-row memory-row" data-row-id="${escapeHtml(row.id)}">
 	            <span class="memory-badge">${escapeHtml(label)}</span>
 	            <span class="memory-value${memoryClass}">${escapeHtml(formatDisplay(memoryAmount))}</span>
-	            <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除">×</button>
+	            <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除"${disabledAttr}>×</button>
 	          </div>
 	        `;
 	      }
@@ -1640,7 +2083,7 @@
 		      const editingClass = lane?.editingRowId === row.id ? " is-editing" : "";
 		      return `
 		        <div class="tape-row number${editingClass}${detailOpenClass}" data-row-id="${escapeHtml(row.id)}">
-	          <select class="row-op" data-row-id="${escapeHtml(row.id)}" aria-label="演算子">
+	          <select class="row-op" data-row-id="${escapeHtml(row.id)}" aria-label="演算子"${disabledAttr}>
 	            ${operators.map((op) => `<option value="${escapeHtml(op)}"${op === row.op ? " selected" : ""}>${escapeHtml(op)}</option>`).join("")}
 	          </select>
 		          <div class="row-entry">
@@ -1649,18 +2092,24 @@
 		            </div>
 		            <div class="row-detail${detailClass}">
 		              <div class="row-detail-inner">
-		                <button class="qty-box" type="button" data-row-id="${escapeHtml(row.id)}" aria-label="個数を電卓で入力">個数
+		                <button class="qty-box" type="button" data-row-id="${escapeHtml(row.id)}" aria-label="個数を電卓で入力"${disabledAttr}>個数
 		                  <span class="row-qty" data-row-id="${escapeHtml(row.id)}">${escapeHtml(formatQuantity(row.qty || "1"))}</span>
 		                </button>
 		                <label class="memo-box">商品メモ
-		                  <input class="row-memo" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.memo || "")}" placeholder="例: 冷蔵庫本体" aria-label="商品メモ">
+		                  <input class="row-memo" data-row-id="${escapeHtml(row.id)}" value="${escapeAttr(row.memo || "")}" placeholder="例: 冷蔵庫本体" aria-label="商品メモ"${disabledAttr}>
 		                </label>
+		                <div class="jan-box">
+		                  <label class="jan-field">JANコード
+		                    <input class="row-jan" data-row-id="${escapeHtml(row.id)}" inputmode="numeric" value="${escapeAttr(row.jan || "")}" placeholder="49..." aria-label="JANコード"${disabledAttr}>
+		                  </label>
+		                  <button class="jan-lookup" type="button" data-action="lookup-jan" data-row-id="${escapeHtml(row.id)}"${disabledAttr}>検索</button>
+		                </div>
 		              </div>
 		            </div>
 		            ${!row.detailOpen && summary.length ? `<div class="row-extra-summary">${summary.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}</div>` : ""}
 	            <output class="row-subtotal${subtotalNegative ? " is-negative" : ""}" data-row-id="${escapeHtml(row.id)}">${escapeHtml(formatLineSubtotal(row))}</output>
 	          </div>
-	          <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除">×</button>
+	          <button class="row-delete" type="button" data-action="delete-row" data-row-id="${escapeHtml(row.id)}" title="行を削除" aria-label="行を削除"${disabledAttr}>×</button>
 	        </div>
 	      `;
 	    }
@@ -1676,7 +2125,24 @@
       }
 
       if (control === "remove-active") {
+        const lane = activeLane();
+        if (!guardLaneUnlocked(lane)) return;
         removeLane(state.activeId);
+        return;
+      }
+
+      if (control === "toggle-lock") {
+        toggleActiveLaneLock();
+        return;
+      }
+
+      if (control === "fee-settings") {
+        openFeeDialog();
+        return;
+      }
+
+      if (control === "backup") {
+        openBackupDialog();
         return;
       }
 
@@ -1696,7 +2162,7 @@
       }
     }
 
-    function handleLaneAction(action, button) {
+    async function handleLaneAction(action, button) {
       const laneEl = button.closest(".lane");
       const lane = getLane(laneEl?.dataset.laneId);
       if (!lane) return;
@@ -1708,12 +2174,15 @@
 	        copy.rows = copy.rows.map((row) => ({ ...row, id: uid() }));
 	        copy.editingRowId = "";
 	        copy.editingField = "value";
+	        copy.locked = false;
 	        state.lanes.splice(state.lanes.indexOf(lane) + 1, 0, copy);
         state.activeId = copy.id;
         render();
         scrollLaneIntoView(copy.id);
         return;
       }
+
+      if (!guardLaneUnlocked(lane)) return;
 
       if (action === "clear-lane") {
         lane.rows = [];
@@ -1733,6 +2202,11 @@
         return;
       }
 
+      if (action === "lookup-jan") {
+        await lookupJanForButton(button);
+        return;
+      }
+
 	      if (action === "delete-row") {
 	        if (lane.editingRowId === button.dataset.rowId) {
 	          lane.editingRowId = "";
@@ -1746,28 +2220,243 @@
       }
     }
 
+    function renderFeeShortcuts() {
+      if (!settings.fees.length) {
+        feeShortcutsEl.innerHTML = `<button class="shortcut-btn" type="button" data-control="fee-settings">定型を追加</button>`;
+        return;
+      }
+      feeShortcutsEl.innerHTML = settings.fees.map((fee) => `
+        <button class="shortcut-btn" type="button" data-fee-id="${escapeAttr(fee.id)}" title="${escapeAttr(formatFeeLabel(fee))}">
+          ${escapeHtml(fee.name)}
+        </button>
+      `).join("");
+    }
+
+    function openFeeDialog() {
+      renderFeeList();
+      feeDialog.showModal();
+      requestAnimationFrame(() => feeNameEl.focus());
+    }
+
+    function renderFeeList() {
+      feeListEl.innerHTML = settings.fees.length ? settings.fees.map((fee) => `
+        <div class="fee-item">
+          <span class="fee-name">${escapeHtml(fee.name)}</span>
+          <span class="fee-value">${escapeHtml(formatFeeLabel(fee))}</span>
+          <button class="mini-btn" type="button" data-fee-dialog="delete" data-fee-id="${escapeAttr(fee.id)}" title="削除" aria-label="削除">×</button>
+        </div>
+      `).join("") : `<p class="dialog-note">まだ定型料金がありません。</p>`;
+    }
+
+    function addFeeFromForm() {
+      const fee = sanitizeFee({
+        id: uid(),
+        name: feeNameEl.value,
+        type: feeTypeEl.value,
+        value: feeValueEl.value
+      });
+      if (!fee) {
+        showToast("定型料金を確認してください");
+        return;
+      }
+      settings.fees.push(fee);
+      saveSettings();
+      feeNameEl.value = "";
+      feeValueEl.value = "";
+      renderFeeList();
+      renderFeeShortcuts();
+      showToast("定型料金を追加しました");
+    }
+
+    function deleteFee(id) {
+      settings.fees = settings.fees.filter((fee) => fee.id !== id);
+      saveSettings();
+      renderFeeList();
+      renderFeeShortcuts();
+    }
+
+    function formatFeeLabel(fee) {
+      if (fee.type === "percent") return `商品代金の${formatDisplay(fee.value)}%`;
+      return `${formatDisplay(fee.value)}円`;
+    }
+
+    function applyFeeShortcut(id) {
+      const lane = activeLane();
+      if (!lane || !guardLaneUnlocked(lane)) return;
+      const fee = settings.fees.find((item) => item.id === id);
+      if (!fee) return;
+      if (lane.isTyping) {
+        commitCurrent(lane, true);
+      }
+      const base = fee.type === "percent" ? calculateFeeBase(lane) : calculateSegment(lane, false);
+      if (!base.ok) {
+        showToast(base.label);
+        return;
+      }
+      const amount = fee.type === "percent" ? base.value * fee.value / 100 : fee.value;
+      if (!Number.isFinite(amount)) {
+        showToast("定型料金を確認してください");
+        return;
+      }
+      lane.rows.push({
+        id: uid(),
+        type: "number",
+        op: "+",
+        value: formatPlain(amount),
+        qty: "1",
+        memo: fee.type === "percent" ? `${fee.name} ${formatDisplay(fee.value)}%` : fee.name,
+        jan: "",
+        isFee: true,
+        detailOpen: false
+      });
+      lane.current = "0";
+      lane.pendingOp = "+";
+      lane.isTyping = false;
+      lane.justEvaluated = false;
+      lane.editingRowId = "";
+      lane.editingField = "value";
+      render();
+    }
+
+    function openBackupDialog() {
+      backupTextEl.value = buildBackupText();
+      backupFileEl.value = "";
+      backupDialog.showModal();
+      backupTextEl.focus();
+      backupTextEl.select();
+    }
+
+    function buildBackupText() {
+      return JSON.stringify({
+        app: "nren-list-calculator",
+        version: BACKUP_VERSION,
+        exportedAt: new Date().toISOString(),
+        state,
+        settings
+      }, null, 2);
+    }
+
+    function restoreBackupText() {
+      let parsed;
+      try {
+        parsed = JSON.parse(backupTextEl.value);
+      } catch (error) {
+        showToast("JSONを確認してください");
+        return;
+      }
+
+      const nextState = sanitizeState(parsed.state || parsed);
+      const nextSettings = sanitizeSettings(parsed.settings || settings);
+      if (!nextState) {
+        showToast("バックアップ形式を確認してください");
+        return;
+      }
+      if (!confirm("現在の内容をバックアップの内容で上書きしますか。")) return;
+      state = nextState;
+      settings = nextSettings;
+      saveSettings();
+      render();
+      backupDialog.close();
+      showToast("復元しました");
+    }
+
+    async function lookupJanForButton(button) {
+      const lane = getLane(button.closest(".lane")?.dataset.laneId);
+      const row = lane ? getRow(lane, button.dataset.rowId) : null;
+      if (!lane || !row || !guardLaneUnlocked(lane)) return;
+      const rowEl = button.closest(".tape-row.number");
+      const janInput = rowEl?.querySelector(".row-jan");
+      const jan = normalizeJanInput(janInput?.value || row.jan);
+      if (!isValidJan(jan)) {
+        showToast("JANコードを確認してください");
+        return;
+      }
+      row.jan = jan;
+      button.disabled = true;
+      button.textContent = "検索中";
+      try {
+        const product = await lookupJanProduct(jan);
+        if (!product?.title) {
+          showToast("商品名が見つかりません");
+          return;
+        }
+        row.memo = product.title;
+        rememberManualJanProduct(row, product.source || "lookup");
+        render();
+        showToast("商品名を入力しました");
+      } catch (error) {
+        console.warn(error);
+        showToast("JAN検索に失敗しました");
+      } finally {
+        button.disabled = false;
+        button.textContent = "検索";
+      }
+    }
+
+    async function lookupJanProduct(jan) {
+      const cached = settings.janProducts[jan];
+      if (cached?.title) return cached;
+      const sources = [
+        `https://world.openproductsfacts.org/api/v2/product/${encodeURIComponent(jan)}.json`,
+        `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(jan)}.json`
+      ];
+      for (const url of sources) {
+        try {
+          const response = await fetch(url, { headers: { "Accept": "application/json" } });
+          if (!response.ok) continue;
+          const data = await response.json();
+          const product = data.product || {};
+          const title = product.product_name_ja || product.product_name || product.generic_name_ja || product.generic_name || product.brands;
+          if (title) {
+            return { title: String(title).trim(), source: "openfacts" };
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+      return null;
+    }
+
+    function rememberManualJanProduct(row, source = "manual") {
+      const jan = normalizeJanInput(row.jan);
+      const title = String(row.memo || "").trim();
+      if (!isValidJan(jan) || !title) return;
+      settings.janProducts[jan] = { title, source };
+      saveSettings();
+    }
+
     function handleKey(key) {
       const lane = activeLane();
       if (!lane) return;
+      if (!guardLaneUnlocked(lane)) return;
 
+      const previousRowsLength = lane.rows.length;
+      const previousEditingRowId = lane.editingRowId;
+      let partial = false;
       if (/^\d$/.test(key) || key === "00") {
         inputDigit(lane, key);
+        partial = true;
 	      } else if (key === ".") {
 	        inputDecimal(lane);
+	        partial = true;
 	      } else if (operators.includes(key)) {
 	        inputOperator(lane, key);
 	      } else if (key === "commit") {
 	        commitCurrent(lane, true);
       } else if (key === "C") {
         clearCurrent(lane);
+        partial = true;
       } else if (key === "AC") {
         clearActiveSegment(lane);
       } else if (key === "back") {
         backspace(lane);
+        partial = true;
 	      } else if (key === "+/-") {
 	        toggleSign(lane);
+	        partial = true;
 	      } else if (key === "%") {
 	        percent(lane);
+	        partial = true;
 	      } else if (key === "note") {
 	        addNote(lane);
       } else if (key === "M+") {
@@ -1780,7 +2469,11 @@
         memoryClear(lane);
       }
 
-      render();
+      if (partial && previousRowsLength === lane.rows.length && previousEditingRowId === lane.editingRowId) {
+        refreshActiveEdit(lane);
+      } else {
+        render();
+      }
     }
 
 	    function inputDigit(lane, digit) {
@@ -2045,6 +2738,12 @@
 	      return calculateRows(rows);
     }
 
+    function calculateFeeBase(lane) {
+      const start = activeSegmentStart(lane);
+      const rows = lane.rows.slice(start).filter((row) => row.type === "number" && !row.isFee);
+      return calculateRows(rows);
+    }
+
 	    function calculateRows(rows) {
 	      const terms = [];
 	      let hasNumber = false;
@@ -2186,6 +2885,30 @@
 	      }
 		    }
 
+    function refreshActiveEdit(lane) {
+      const row = activeNumberRow(lane);
+      if (!row) {
+        refreshLaneMeters(lane);
+        refreshSummary();
+        saveState();
+        return;
+      }
+      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(lane.id)}"]`);
+      const rowEl = laneEl?.querySelector(`[data-row-id="${cssEscape(row.id)}"]`);
+      if (!rowEl) {
+        render();
+        return;
+      }
+      const valueEl = rowEl.querySelector(".row-value");
+      const opEl = rowEl.querySelector(".row-op");
+      if (valueEl) valueEl.value = row.value || "0";
+      if (opEl) opEl.value = row.op;
+      refreshRowSubtotal(lane, row);
+      refreshLaneMeters(lane);
+      refreshSummary();
+      saveState();
+    }
+
 		    function refreshSummary() {
 		      const lane = activeLane();
 		      if (!lane) return;
@@ -2202,6 +2925,9 @@
 	      activeTotalEl.classList.toggle("is-negative", segment.ok && segment.value < 0);
 	      activeMemoryEl.classList.toggle("is-negative", lane.memory < 0);
 	      laneCountEl.textContent = `${state.lanes.length}連`;
+	      lockToggleEl.classList.toggle("is-active", Boolean(lane.locked));
+	      lockToggleEl.textContent = lane.locked ? "ロック中" : "ロック";
+	      lockToggleEl.title = lane.locked ? "選択中の電卓のロックを解除" : "選択中の電卓をロック";
 	    }
 
     function displayCurrent(lane) {
@@ -2261,6 +2987,15 @@
       return `${parts[0]}.${parts.slice(1).join("")}`;
     }
 
+    function normalizeJanInput(value) {
+      return String(value || "").replace(/\D/g, "").slice(0, 14);
+    }
+
+    function isValidJan(value) {
+      const jan = normalizeJanInput(value);
+      return /^\d{8}$/.test(jan) || /^\d{12,14}$/.test(jan);
+    }
+
     function formatQuantity(value) {
       const qty = parseQuantity(value);
       if (!Number.isFinite(qty)) return "入力エラー";
@@ -2307,8 +3042,31 @@
 		      saveState();
 		    }
 
+    function isLaneLocked(lane) {
+      return Boolean(lane?.locked);
+    }
+
+    function guardLaneUnlocked(lane) {
+      if (!isLaneLocked(lane)) return true;
+      showToast("ロック中です");
+      return false;
+    }
+
+    function toggleActiveLaneLock() {
+      const lane = activeLane();
+      if (!lane) return;
+      lane.locked = !lane.locked;
+      if (lane.locked) {
+        lane.editingRowId = "";
+        lane.editingField = "value";
+        lane.isTyping = false;
+      }
+      render();
+      showToast(lane.locked ? "ロックしました" : "ロック解除しました");
+    }
+
 	    function isRowControlTarget(target) {
-	      return Boolean(target.closest("button, select, textarea, .lane-title, .row-qty, .row-memo, .note-value, .qty-box, .memo-box"));
+	      return Boolean(target.closest("button, select, textarea, .lane-title, .row-qty, .row-memo, .row-jan, .note-value, .qty-box, .memo-box, .jan-box"));
 	    }
 
 	    function focusDetailBox(box) {
@@ -2317,6 +3075,13 @@
 	      const rowId = rowEl?.dataset.rowId || box.dataset.rowId;
 	      if (box.classList.contains("qty-box")) {
 	        selectQuantityBox(laneId, rowId);
+	        return;
+	      }
+
+	      if (box.classList.contains("jan-box")) {
+	        const input = box.querySelector(".row-jan");
+	        selectNumberRow(laneId, rowId);
+	        requestAnimationFrame(() => input?.focus());
 	        return;
 	      }
 
@@ -2333,6 +3098,7 @@
 	      const lane = getLane(laneId);
 	      const row = lane ? getRow(lane, rowId) : null;
 	      if (!lane || !row || row.type !== "number") return;
+	      if (!guardLaneUnlocked(lane)) return;
 	      state.activeId = lane.id;
 	      lane.editingRowId = row.id;
 	      lane.editingField = "value";
@@ -2355,6 +3121,7 @@
 	      const lane = getLane(laneId);
 	      const row = lane ? getRow(lane, rowId) : null;
 	      if (!lane || !row || row.type !== "number") return;
+	      if (!guardLaneUnlocked(lane)) return;
 	      state.activeId = lane.id;
 	      lane.editingRowId = row.id;
 	      lane.editingField = "qty";
@@ -2378,6 +3145,7 @@
 	      const lane = getLane(laneId);
 	      const row = lane ? getRow(lane, rowId) : null;
 	      if (!row || row.type !== "number") return;
+	      if (!guardLaneUnlocked(lane)) return;
 	      selectNumberRow(laneId, rowId);
 	      if (row.detailOpen) {
 	        return;
@@ -2639,13 +3407,13 @@
         lines.push(`[${lane.title}]`);
         lines.push(`Total\t${formatResult(segment)}`);
         lines.push(`Memory\t${formatDisplay(lane.memory)}`);
-        lines.push("Type\tOp\tUnit\tQty\tSubtotal\tMemo");
+        lines.push("Type\tOp\tUnit\tQty\tSubtotal\tMemo\tJAN");
         for (const row of lane.rows) {
           if (row.type === "number") {
-            lines.push(`Number\t${row.op}\t${normalizeInput(row.value)}\t${formatQuantity(row.qty)}\t${formatDisplay(effectiveRowValue(row))}\t${row.memo || ""}`);
+            lines.push(`Number\t${row.op}\t${normalizeInput(row.value)}\t${formatQuantity(row.qty)}\t${formatDisplay(effectiveRowValue(row))}\t${row.memo || ""}\t${row.jan || ""}`);
           }
-          if (row.type === "note") lines.push(`Memo\t\t\t\t\t${row.note || ""}`);
-          if (row.type === "memory") lines.push(`${row.mode}\t\t${row.value}\t\t\t`);
+          if (row.type === "note") lines.push(`Memo\t\t\t\t\t${row.note || ""}\t`);
+          if (row.type === "memory") lines.push(`${row.mode}\t\t${row.value}\t\t\t\t`);
         }
 	        if (lane.isTyping && !activeNumberRow(lane)) {
 	          lines.push(`Current\t${lane.pendingOp}\t${lane.current}`);
@@ -2657,28 +3425,37 @@
     }
 
     async function copyExportText() {
+      await copyText(exportTextEl.value, "コピーしました", exportTextEl);
+    }
+
+    async function copyText(text, message, fallbackEl = exportTextEl) {
       try {
-        await navigator.clipboard.writeText(exportTextEl.value);
-        showToast("コピーしました");
+        await navigator.clipboard.writeText(text);
+        showToast(message);
       } catch (error) {
-        exportTextEl.focus();
-        exportTextEl.select();
+        const activeTextEl = document.activeElement?.matches("textarea") ? document.activeElement : fallbackEl;
+        activeTextEl.focus();
+        activeTextEl.select();
         document.execCommand("copy");
-        showToast("コピーしました");
+        showToast(message);
       }
     }
 
     function downloadExportText() {
-      const blob = new Blob([exportTextEl.value], { type: "text/plain;charset=utf-8" });
+      downloadText(exportTextEl.value, `nren-calc-${new Date().toISOString().slice(0, 10)}.txt`, "text/plain;charset=utf-8");
+      showToast("TXTを作成しました");
+    }
+
+    function downloadText(text, filename, type) {
+      const blob = new Blob([text], { type });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `nren-calc-${new Date().toISOString().slice(0, 10)}.txt`;
+      anchor.download = filename;
       document.body.append(anchor);
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
-      showToast("TXTを作成しました");
     }
 
     function mapKeyboardKey(event) {
@@ -2724,11 +3501,33 @@
       return String(value).replace(/"/g, '\\"');
     }
 
+    function showUpdateBanner(worker) {
+      pendingServiceWorker = worker;
+      updateBannerEl.classList.add("show");
+    }
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+        navigator.serviceWorker.register("./service-worker.js").then((registration) => {
+          if (registration.waiting) {
+            showUpdateBanner(registration.waiting);
+          }
+          registration.addEventListener("updatefound", () => {
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener("statechange", () => {
+              if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                showUpdateBanner(worker);
+              }
+            });
+          });
+        }).catch((error) => {
           console.warn("Service worker registration failed", error);
         });
+      });
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
       });
     }
   </script>
