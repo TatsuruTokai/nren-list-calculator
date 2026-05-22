@@ -1,0 +1,27 @@
+{
+  "name": "N連リスト電卓",
+  "short_name": "N連電卓",
+  "description": "複数リストを同時に扱える小売向けリスト電卓。",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f8ff",
+  "theme_color": "#2563eb",
+  "categories": ["productivity", "utilities", "business"],
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
