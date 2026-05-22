@@ -205,8 +205,31 @@
       margin: 0 auto;
     }
 
+	    .lanes.is-reordering {
+	      cursor: grabbing;
+	      user-select: none;
+	    }
+
 	    .lanes.is-reordering .lane {
-	      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+	      transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+	    }
+
+	    .lanes.is-reordering .lane:not(.is-touch-dragging) {
+	      animation: lane-wiggle 460ms ease-in-out infinite alternate;
+	    }
+
+	    .lanes.is-reordering .lane:nth-child(even):not(.is-touch-dragging) {
+	      animation-direction: alternate-reverse;
+	    }
+
+	    @keyframes lane-wiggle {
+	      from {
+	        rotate: -0.16deg;
+	      }
+
+	      to {
+	        rotate: 0.16deg;
+	      }
 	    }
 
 	    .lane {
@@ -230,11 +253,38 @@
 	    }
 
 	    .lane.is-touch-dragging {
-	      opacity: 0.78;
-	      position: relative;
-	      z-index: 6;
-	      box-shadow: var(--shadow);
-	      transform: scale(0.985);
+	      opacity: 0;
+	      pointer-events: none;
+	    }
+
+	    .lane-drag-ghost {
+	      position: fixed;
+	      left: 0;
+	      top: 0;
+	      z-index: 1000;
+	      pointer-events: none;
+	      opacity: 0.98;
+	      box-shadow: 0 24px 56px rgba(15, 23, 42, 0.24);
+	      transform-origin: center;
+	      transition: transform 90ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, opacity 160ms ease;
+	      will-change: transform;
+	    }
+
+	    .lane-drag-ghost .lane-head {
+	      cursor: grabbing;
+	    }
+
+	    .lane-drag-ghost.is-returning {
+	      opacity: 1;
+	      transition: transform 190ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 170ms ease;
+	    }
+
+	    @media (prefers-reduced-motion: reduce) {
+	      .lanes.is-reordering .lane,
+	      .lane-drag-ghost {
+	        animation: none;
+	        transition: none;
+	      }
 	    }
 
 	    .lane.is-drop-target {
@@ -2349,19 +2399,45 @@
 
 	    function startLaneReorderPress(event, laneEl) {
 	      if (!laneEl) return;
+	      event.preventDefault();
 	      clearLaneDragTimer();
+	      const pointerId = event.pointerId;
+	      const startX = event.clientX;
+	      const startY = event.clientY;
 	      laneDragTimer = window.setTimeout(() => {
-	        beginLaneReorder(laneEl.dataset.laneId, event.pointerId);
+	        beginLaneReorder(laneEl.dataset.laneId, pointerId, startX, startY);
 	      }, 520);
 	    }
 
-	    function beginLaneReorder(laneId, pointerId) {
+	    function beginLaneReorder(laneId, pointerId, clientX, clientY) {
 	      laneDragTimer = null;
 	      const laneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(laneId)}"]`);
 	      if (!laneEl) return;
-	      laneDragState = { id: laneId, pointerId };
+	      const rect = laneEl.getBoundingClientRect();
+	      const ghost = laneEl.cloneNode(true);
+	      ghost.classList.remove("is-touch-dragging", "is-dragging", "is-drop-target");
+	      ghost.classList.add("lane-drag-ghost");
+	      ghost.removeAttribute("draggable");
+	      ghost.setAttribute("aria-hidden", "true");
+	      ghost.style.width = `${rect.width}px`;
+	      ghost.style.height = `${rect.height}px`;
+	      ghost.style.transition = "none";
+	      ghost.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1) rotate(0deg)`;
+	      document.body.appendChild(ghost);
+	      laneDragState = {
+	        id: laneId,
+	        pointerId,
+	        ghost,
+	        offsetX: clientX - rect.left,
+	        offsetY: clientY - rect.top,
+	        lastX: clientX,
+	        lastY: clientY
+	      };
 	      lanesEl.classList.add("is-reordering");
 	      laneEl.classList.add("is-touch-dragging");
+	      ghost.getBoundingClientRect();
+	      ghost.style.transition = "";
+	      moveLaneGhost(clientX, clientY, 0);
 	      try {
 	        lanesEl.setPointerCapture(pointerId);
 	      } catch (error) {
@@ -2372,30 +2448,65 @@
 	    function handleLaneReorderMove(event) {
 	      if (!laneDragState || event.pointerId !== laneDragState.pointerId) return;
 	      event.preventDefault();
-	      const targetLaneEl = document.elementFromPoint(event.clientX, event.clientY)?.closest(".lane");
+	      moveLaneGhost(event.clientX, event.clientY);
+	      const targetLaneEl = laneReorderTargetAt(event.clientX, event.clientY);
 	      if (!targetLaneEl || targetLaneEl.dataset.laneId === laneDragState.id) return;
 	      reorderLane(laneDragState.id, targetLaneEl.dataset.laneId, { scroll: false });
 	    }
 
 	    function endLaneReorder(event) {
-	      if (event?.pointerId === laneDragState?.pointerId) {
+	      const dragState = laneDragState;
+	      if (!dragState) return;
+	      if (event?.pointerId === dragState.pointerId) {
 	        try {
 	          lanesEl.releasePointerCapture(event.pointerId);
 	        } catch (error) {
 	          // Pointer capture may already be released.
 	        }
 	      }
-	      lanesEl.classList.remove("is-reordering");
-	      lanesEl.querySelectorAll(".lane.is-touch-dragging").forEach((laneEl) => {
-	        laneEl.classList.remove("is-touch-dragging");
-	      });
 	      laneDragState = null;
+	      const ghost = dragState.ghost;
+	      const finalLaneEl = lanesEl.querySelector(`[data-lane-id="${cssEscape(dragState.id)}"]`);
+	      const cleanup = () => {
+	        ghost?.remove();
+	        lanesEl.classList.remove("is-reordering");
+	        lanesEl.querySelectorAll(".lane.is-touch-dragging").forEach((laneEl) => {
+	          laneEl.classList.remove("is-touch-dragging");
+	        });
+	      };
+	      if (!ghost || !finalLaneEl) {
+	        cleanup();
+	        return;
+	      }
+	      const finalRect = finalLaneEl.getBoundingClientRect();
+	      ghost.classList.add("is-returning");
+	      ghost.style.width = `${finalRect.width}px`;
+	      ghost.style.height = `${finalRect.height}px`;
+	      ghost.style.transform = `translate3d(${finalRect.left}px, ${finalRect.top}px, 0) scale(1) rotate(0deg)`;
+	      window.setTimeout(cleanup, 210);
 	    }
 
 	    function clearLaneDragTimer() {
 	      if (!laneDragTimer) return;
 	      window.clearTimeout(laneDragTimer);
 	      laneDragTimer = null;
+	    }
+
+	    function moveLaneGhost(clientX, clientY, tilt = null) {
+	      if (!laneDragState?.ghost) return;
+	      const x = clientX - laneDragState.offsetX;
+	      const y = clientY - laneDragState.offsetY;
+	      const nextTilt = tilt ?? Math.max(-1.1, Math.min(1.1, (clientX - laneDragState.lastX) * 0.045));
+	      laneDragState.lastX = clientX;
+	      laneDragState.lastY = clientY;
+	      laneDragState.ghost.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.035) rotate(${nextTilt}deg)`;
+	    }
+
+	    function laneReorderTargetAt(clientX, clientY) {
+	      if (!laneDragState) return null;
+	      const targetLaneEl = document.elementFromPoint(clientX, clientY)?.closest(".lane");
+	      if (!targetLaneEl || !lanesEl.contains(targetLaneEl)) return null;
+	      return targetLaneEl.dataset.laneId === laneDragState.id ? null : targetLaneEl;
 	    }
 
 	    function markDropTarget(targetLaneEl) {
