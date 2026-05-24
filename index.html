@@ -843,24 +843,40 @@
     }
 
     .shortcut-list {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
       gap: 7px;
     }
 
     .shortcut-btn {
       min-height: 40px;
+      width: 100%;
       max-width: 100%;
       padding: 0 11px;
       border: 1px solid var(--accent-line);
       border-radius: 8px;
       background: var(--accent-soft);
       color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       font-size: 0.88rem;
       font-weight: 850;
       overflow: hidden;
+      text-align: left;
+    }
+
+    .shortcut-btn span,
+    .shortcut-btn small {
+      min-width: 0;
+      overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .shortcut-btn small {
+      color: var(--muted);
+      font-size: 0.72rem;
     }
 
     .keypad {
@@ -975,7 +991,7 @@
 
     .form-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) auto;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(118px, 0.8fr) minmax(112px, 0.7fr) auto;
       gap: 8px;
       align-items: end;
     }
@@ -1010,7 +1026,7 @@
 
     .fee-item {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
       min-height: 48px;
@@ -1018,6 +1034,12 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--field-bg);
+    }
+
+    .fee-info {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
     }
 
     .fee-name {
@@ -1033,6 +1055,89 @@
       font-size: 0.86rem;
       font-weight: 800;
       white-space: nowrap;
+    }
+
+    .fee-picker-dialog {
+      width: min(560px, calc(100vw - 28px));
+    }
+
+    .fee-breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .fee-crumb {
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: var(--field-bg);
+      color: var(--ink);
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .fee-crumb.is-current {
+      border-color: var(--accent-line);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .fee-picker-list {
+      display: grid;
+      gap: 8px;
+      max-height: min(54svh, 520px);
+      overflow: auto;
+    }
+
+    .fee-picker-item {
+      width: 100%;
+      min-height: 54px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field-bg);
+      color: var(--ink);
+      text-align: left;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+
+    .fee-picker-item:hover {
+      border-color: var(--accent-line);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    .fee-picker-info {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    .fee-picker-title {
+      min-width: 0;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fee-picker-meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .fee-folder-mark {
+      color: var(--accent);
+      font-weight: 900;
     }
 
     .dialog-file {
@@ -1355,7 +1460,7 @@
         <button class="icon-btn primary" type="button" data-control="add-lane" title="電卓を追加" aria-label="電卓を追加">+</button>
         <button class="icon-btn" type="button" data-control="remove-active" title="選択中の電卓を削除" aria-label="選択中の電卓を削除">−</button>
         <button class="text-btn" type="button" data-control="toggle-lock" id="lockToggle" title="選択中の電卓をロック">ロック</button>
-        <button class="text-btn" type="button" data-control="fee-settings" title="定型料金を編集">定型</button>
+        <button class="text-btn" type="button" data-control="fee-picker" title="定型料金を選択">定型料金</button>
         <button class="text-btn" type="button" data-control="export" title="テキストを書き出す">書き出し</button>
         <button class="text-btn" type="button" data-control="backup" title="バックアップと復元">保存/復元</button>
         <button class="text-btn" type="button" data-control="reset-all" title="すべて初期化">初期化</button>
@@ -1441,10 +1546,13 @@
       <button class="icon-btn" type="button" data-fee-dialog="close" title="閉じる" aria-label="閉じる">×</button>
     </div>
     <div class="dialog-body">
-      <p class="dialog-note">よく使う料金を登録すると、右側のショートカットから現在の電卓へ追加できます。%指定は現在の商品代金合計を基準に計算します。</p>
+      <p class="dialog-note">よく使う料金を登録すると、定型料金ポップアップから現在の電卓へ追加できます。フォルダは「保証/プレ保プラス」のように入力できます。%指定は現在の商品代金合計を基準に計算します。</p>
       <div class="form-grid">
         <label class="field">名前
           <input id="feeName" placeholder="例: 長期保証">
+        </label>
+        <label class="field">フォルダ
+          <input id="feeFolder" placeholder="例: 保証/プレ保プラス">
         </label>
         <label class="field">種類
           <select id="feeType">
@@ -1458,6 +1566,20 @@
         <button class="text-btn primary" type="button" data-fee-dialog="add">追加</button>
       </div>
       <div class="fee-list" id="feeList"></div>
+    </div>
+  </dialog>
+
+  <dialog class="fee-picker-dialog" id="feePickerDialog">
+    <div class="dialog-head">
+      <h2 class="dialog-title">定型料金</h2>
+      <button class="icon-btn" type="button" data-fee-picker="close" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="dialog-body">
+      <div class="fee-breadcrumb" id="feeBreadcrumb"></div>
+      <div class="fee-picker-list" id="feePickerList"></div>
+    </div>
+    <div class="dialog-actions">
+      <button class="text-btn" type="button" data-fee-picker="settings">編集</button>
     </div>
   </dialog>
 
@@ -1488,7 +1610,7 @@
   <script>
     const STORAGE_KEY = "nren-list-calculator-state-v1";
     const SETTINGS_KEY = "nren-list-calculator-settings-v1";
-    const BACKUP_VERSION = 2;
+    const BACKUP_VERSION = 3;
     const operators = ["+", "-", "×", "÷"];
     const lanesEl = document.getElementById("lanes");
     const keypadEl = document.getElementById("keypad");
@@ -1505,8 +1627,12 @@
     const feeDialog = document.getElementById("feeDialog");
     const feeListEl = document.getElementById("feeList");
     const feeNameEl = document.getElementById("feeName");
+    const feeFolderEl = document.getElementById("feeFolder");
     const feeTypeEl = document.getElementById("feeType");
     const feeValueEl = document.getElementById("feeValue");
+    const feePickerDialog = document.getElementById("feePickerDialog");
+    const feePickerListEl = document.getElementById("feePickerList");
+    const feeBreadcrumbEl = document.getElementById("feeBreadcrumb");
     const backupDialog = document.getElementById("backupDialog");
     const backupTextEl = document.getElementById("backupText");
     const backupFileEl = document.getElementById("backupFile");
@@ -1521,6 +1647,7 @@
 	    let laneDragState = null;
 	    let draggedLaneId = null;
 	    let pendingServiceWorker = null;
+	    let feePickerPath = [];
     let settings = restoreSettings();
     let state = restoreState() || createDefaultState();
     ensureActiveLane();
@@ -1811,6 +1938,42 @@
       }
     });
 
+    feePickerDialog.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-fee-picker], [data-fee-folder], [data-fee-id]");
+      if (!button) return;
+
+      if (button.dataset.feePicker === "close") {
+        feePickerDialog.close();
+        return;
+      }
+
+      if (button.dataset.feePicker === "settings") {
+        const path = feePickerPath;
+        feePickerDialog.close();
+        openFeeDialog(path);
+        return;
+      }
+
+      if (button.dataset.feePicker === "crumb") {
+        const depth = Number(button.dataset.feeDepth);
+        feePickerPath = depth < 0 ? [] : feePickerPath.slice(0, depth + 1);
+        renderFeePicker();
+        return;
+      }
+
+      if (button.dataset.feeFolder) {
+        feePickerPath = [...feePickerPath, button.dataset.feeFolder];
+        renderFeePicker();
+        return;
+      }
+
+      if (button.dataset.feeId) {
+        if (applyFeeShortcut(button.dataset.feeId)) {
+          feePickerDialog.close();
+        }
+      }
+    });
+
     backupDialog.addEventListener("click", async (event) => {
       const button = event.target.closest("[data-backup-dialog]");
       if (!button) return;
@@ -1947,8 +2110,16 @@
         id: fee.id || uid(),
         name,
         type: fee.type === "percent" ? "percent" : "fixed",
-        value
+        value,
+        path: sanitizeFeePath(fee.path || fee.folder || fee.folderPath || "")
       };
+    }
+
+    function sanitizeFeePath(value) {
+      const source = Array.isArray(value) ? value : String(value || "").split(/[/>＞→]+/);
+      return source
+        .map((segment) => String(segment || "").trim())
+        .filter(Boolean);
     }
 
     function sanitizeLane(lane, index) {
@@ -2136,6 +2307,11 @@
         return;
       }
 
+      if (control === "fee-picker") {
+        openFeePickerDialog();
+        return;
+      }
+
       if (control === "fee-settings") {
         openFeeDialog();
         return;
@@ -2221,18 +2397,20 @@
     }
 
     function renderFeeShortcuts() {
-      if (!settings.fees.length) {
-        feeShortcutsEl.innerHTML = `<button class="shortcut-btn" type="button" data-control="fee-settings">定型を追加</button>`;
-        return;
-      }
-      feeShortcutsEl.innerHTML = settings.fees.map((fee) => `
-        <button class="shortcut-btn" type="button" data-fee-id="${escapeAttr(fee.id)}" title="${escapeAttr(formatFeeLabel(fee))}">
-          ${escapeHtml(fee.name)}
+      const count = settings.fees.length;
+      feeShortcutsEl.innerHTML = `
+        <button class="shortcut-btn" type="button" data-control="fee-picker">
+          <span>${count ? `定型料金 ${count}件` : "定型料金を追加"}</span>
+          <small>${count ? "ポップアップで選択" : "未登録"}</small>
         </button>
-      `).join("");
+      `;
     }
 
-    function openFeeDialog() {
+    function openFeeDialog(defaultPath = []) {
+      const cleanPath = sanitizeFeePath(defaultPath);
+      if (cleanPath.length && !feeFolderEl.value.trim()) {
+        feeFolderEl.value = cleanPath.join("/");
+      }
       renderFeeList();
       feeDialog.showModal();
       requestAnimationFrame(() => feeNameEl.focus());
@@ -2241,8 +2419,10 @@
     function renderFeeList() {
       feeListEl.innerHTML = settings.fees.length ? settings.fees.map((fee) => `
         <div class="fee-item">
-          <span class="fee-name">${escapeHtml(fee.name)}</span>
-          <span class="fee-value">${escapeHtml(formatFeeLabel(fee))}</span>
+          <div class="fee-info">
+            <span class="fee-name">${escapeHtml(fee.name)}</span>
+            <span class="fee-value">${escapeHtml(formatFeePath(fee))} / ${escapeHtml(formatFeeLabel(fee))}</span>
+          </div>
           <button class="mini-btn" type="button" data-fee-dialog="delete" data-fee-id="${escapeAttr(fee.id)}" title="削除" aria-label="削除">×</button>
         </div>
       `).join("") : `<p class="dialog-note">まだ定型料金がありません。</p>`;
@@ -2252,6 +2432,7 @@
       const fee = sanitizeFee({
         id: uid(),
         name: feeNameEl.value,
+        path: feeFolderEl.value,
         type: feeTypeEl.value,
         value: feeValueEl.value
       });
@@ -2262,9 +2443,11 @@
       settings.fees.push(fee);
       saveSettings();
       feeNameEl.value = "";
+      feeFolderEl.value = "";
       feeValueEl.value = "";
       renderFeeList();
       renderFeeShortcuts();
+      renderFeePicker();
       showToast("定型料金を追加しました");
     }
 
@@ -2273,6 +2456,7 @@
       saveSettings();
       renderFeeList();
       renderFeeShortcuts();
+      renderFeePicker();
     }
 
     function formatFeeLabel(fee) {
@@ -2280,23 +2464,103 @@
       return `${formatDisplay(fee.value)}円`;
     }
 
+    function formatFeePath(fee) {
+      const path = sanitizeFeePath(fee.path);
+      return path.length ? path.join(" / ") : "トップ";
+    }
+
+    function openFeePickerDialog(path = []) {
+      feePickerPath = sanitizeFeePath(path);
+      renderFeePicker();
+      if (!feePickerDialog.open) {
+        feePickerDialog.showModal();
+      }
+    }
+
+    function renderFeePicker() {
+      if (!feePickerDialog || !feePickerListEl || !feeBreadcrumbEl) return;
+      renderFeeBreadcrumb();
+      const folders = new Set();
+      const fees = [];
+
+      for (const fee of settings.fees) {
+        const path = sanitizeFeePath(fee.path);
+        if (!isSameFeePath(path.slice(0, feePickerPath.length), feePickerPath)) continue;
+        if (path.length > feePickerPath.length) {
+          folders.add(path[feePickerPath.length]);
+        } else {
+          fees.push(fee);
+        }
+      }
+
+      const folderItems = [...folders]
+        .sort(compareJa)
+        .map((folder) => `
+          <button class="fee-picker-item" type="button" data-fee-folder="${escapeAttr(folder)}">
+            <span class="fee-picker-title">${escapeHtml(folder)}</span>
+            <span class="fee-folder-mark">&gt;</span>
+          </button>
+        `).join("");
+
+      const feeItems = fees
+        .slice()
+        .sort((a, b) => compareJa(a.name, b.name))
+        .map((fee) => `
+          <button class="fee-picker-item" type="button" data-fee-id="${escapeAttr(fee.id)}" title="${escapeAttr(formatFeeLabel(fee))}">
+            <span class="fee-picker-info">
+              <span class="fee-picker-title">${escapeHtml(fee.name)}</span>
+            </span>
+            <span class="fee-picker-meta">${escapeHtml(formatFeeLabel(fee))}</span>
+          </button>
+        `).join("");
+
+      const hasItems = Boolean(folderItems || feeItems);
+      feePickerListEl.innerHTML = hasItems
+        ? `${folderItems}${feeItems}`
+        : `<p class="dialog-note">${settings.fees.length ? "このフォルダには定型料金がありません。" : "まだ定型料金がありません。編集から追加してください。"}</p>`;
+    }
+
+    function renderFeeBreadcrumb() {
+      const crumbs = [
+        `<button class="fee-crumb${feePickerPath.length ? "" : " is-current"}" type="button" data-fee-picker="crumb" data-fee-depth="-1">定型料金</button>`
+      ];
+      feePickerPath.forEach((segment, index) => {
+        crumbs.push(`<span class="fee-folder-mark">/</span>`);
+        crumbs.push(`
+          <button class="fee-crumb${index === feePickerPath.length - 1 ? " is-current" : ""}" type="button" data-fee-picker="crumb" data-fee-depth="${index}">
+            ${escapeHtml(segment)}
+          </button>
+        `);
+      });
+      feeBreadcrumbEl.innerHTML = crumbs.join("");
+    }
+
+    function isSameFeePath(first, second) {
+      if (first.length !== second.length) return false;
+      return first.every((segment, index) => segment === second[index]);
+    }
+
+    function compareJa(first, second) {
+      return String(first).localeCompare(String(second), "ja-JP", { numeric: true, sensitivity: "base" });
+    }
+
     function applyFeeShortcut(id) {
       const lane = activeLane();
-      if (!lane || !guardLaneUnlocked(lane)) return;
+      if (!lane || !guardLaneUnlocked(lane)) return false;
       const fee = settings.fees.find((item) => item.id === id);
-      if (!fee) return;
+      if (!fee) return false;
       if (lane.isTyping) {
         commitCurrent(lane, true);
       }
       const base = fee.type === "percent" ? calculateFeeBase(lane) : calculateSegment(lane, false);
       if (!base.ok) {
         showToast(base.label);
-        return;
+        return false;
       }
       const amount = fee.type === "percent" ? base.value * fee.value / 100 : fee.value;
       if (!Number.isFinite(amount)) {
         showToast("定型料金を確認してください");
-        return;
+        return false;
       }
       lane.rows.push({
         id: uid(),
@@ -2316,6 +2580,7 @@
       lane.editingRowId = "";
       lane.editingField = "value";
       render();
+      return true;
     }
 
     function openBackupDialog() {
