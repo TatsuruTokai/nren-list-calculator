@@ -171,6 +171,7 @@
       padding: 0 16px;
       font-size: 0.94rem;
       font-weight: 750;
+      cursor: pointer;
     }
 
     .icon-btn:hover,
@@ -1036,6 +1037,29 @@
       white-space: nowrap;
     }
 
+    .fee-tools {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .fee-tools .text-btn {
+      min-height: 40px;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .fee-picker-dialog {
       width: min(560px, calc(100vw - 28px));
     }
@@ -1538,6 +1562,11 @@
         </label>
         <button class="text-btn primary" type="button" data-fee-dialog="add">追加</button>
       </div>
+      <div class="fee-tools">
+        <label class="text-btn" for="feeImportFile">インポート</label>
+        <button class="text-btn" type="button" data-fee-dialog="export">エクスポート</button>
+        <input class="visually-hidden" id="feeImportFile" type="file" accept="application/json,.json">
+      </div>
       <div class="fee-list" id="feeList"></div>
     </div>
   </dialog>
@@ -1603,6 +1632,7 @@
     const feeFolderEl = document.getElementById("feeFolder");
     const feeTypeEl = document.getElementById("feeType");
     const feeValueEl = document.getElementById("feeValue");
+    const feeImportFileEl = document.getElementById("feeImportFile");
     const feePickerDialog = document.getElementById("feePickerDialog");
     const feePickerListEl = document.getElementById("feePickerList");
     const feeBreadcrumbEl = document.getElementById("feeBreadcrumb");
@@ -1906,8 +1936,23 @@
         return;
       }
 
+      if (button.dataset.feeDialog === "export") {
+        exportFees();
+        return;
+      }
+
       if (button.dataset.feeDialog === "delete") {
         deleteFee(button.dataset.feeId);
+      }
+    });
+
+    feeImportFileEl.addEventListener("change", async () => {
+      const file = feeImportFileEl.files?.[0];
+      if (!file) return;
+      try {
+        importFeesFromText(await file.text());
+      } finally {
+        feeImportFileEl.value = "";
       }
     });
 
@@ -2430,6 +2475,86 @@
       renderFeeList();
       renderFeeShortcuts();
       renderFeePicker();
+    }
+
+    function exportFees() {
+      downloadText(buildFeeExportText(), `nren-fees-${new Date().toISOString().slice(0, 10)}.json`, "application/json;charset=utf-8");
+      showToast("定型料金を書き出しました");
+    }
+
+    function buildFeeExportText() {
+      return JSON.stringify({
+        app: "nren-list-calculator",
+        kind: "fees",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        fees: settings.fees.map((fee) => ({
+          id: fee.id,
+          name: fee.name,
+          path: sanitizeFeePath(fee.path),
+          type: fee.type,
+          value: fee.value
+        }))
+      }, null, 2);
+    }
+
+    function importFeesFromText(text) {
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (error) {
+        showToast("定型料金JSONを確認してください");
+        return false;
+      }
+
+      const fees = extractImportedFees(parsed);
+      if (!fees.length) {
+        showToast("読み込める定型料金がありません");
+        return false;
+      }
+
+      const known = new Set(settings.fees.map(feeSignature));
+      const nextFees = [];
+      for (const fee of fees) {
+        const signature = feeSignature(fee);
+        if (known.has(signature)) continue;
+        known.add(signature);
+        nextFees.push({ ...fee, id: uid() });
+      }
+
+      if (!nextFees.length) {
+        showToast("追加する定型料金はありません");
+        return false;
+      }
+
+      settings.fees.push(...nextFees);
+      saveSettings();
+      renderFeeList();
+      renderFeeShortcuts();
+      renderFeePicker();
+      showToast(`${nextFees.length}件インポートしました`);
+      return true;
+    }
+
+    function extractImportedFees(candidate) {
+      let source = [];
+      if (Array.isArray(candidate)) {
+        source = candidate;
+      } else if (Array.isArray(candidate?.fees)) {
+        source = candidate.fees;
+      } else if (Array.isArray(candidate?.settings?.fees)) {
+        source = candidate.settings.fees;
+      }
+      return source.map(sanitizeFee).filter(Boolean);
+    }
+
+    function feeSignature(fee) {
+      return [
+        fee.name,
+        fee.type,
+        String(fee.value),
+        sanitizeFeePath(fee.path).join("/")
+      ].join("\u001f");
     }
 
     function formatFeeLabel(fee) {
