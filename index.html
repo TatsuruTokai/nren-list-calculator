@@ -821,27 +821,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .shortcut-panel {
-      min-width: 0;
-      display: grid;
-      gap: 8px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface);
-    }
-
-    .shortcut-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 850;
-      text-transform: uppercase;
-    }
-
     .shortcut-list {
       display: grid;
       gap: 7px;
@@ -1482,13 +1461,7 @@
             <span id="activeMemory">M 0</span>
           </div>
         </div>
-        <div class="shortcut-panel" aria-label="定型料金ショートカット">
-          <div class="shortcut-head">
-            <span>定型料金</span>
-            <button class="mini-btn" type="button" data-control="fee-settings" title="定型料金を編集" aria-label="定型料金を編集">＋</button>
-          </div>
-          <div class="shortcut-list" id="feeShortcuts"></div>
-        </div>
+        <div class="shortcut-list" id="feeShortcuts" aria-label="定型料金ショートカット"></div>
         <div class="keypad" id="keypad">
           <button class="key utility" type="button" data-key="AC">AC</button>
           <button class="key utility" type="button" data-key="C">C</button>

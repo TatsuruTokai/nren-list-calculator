@@ -1,4 +1,4 @@
-const CACHE_NAME = "nren-list-calculator-v6";
+const CACHE_NAME = "nren-list-calculator-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
